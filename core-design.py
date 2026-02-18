@@ -32,10 +32,14 @@ def core_design (kva, k, lv_voltage):
     gross_core_area = math.ceil(net_core_area / stacking_factor)
     gross_core_area = math.ceil(gross_core_area / 100) * 100 # round up to nearest 100 mm^2
 
+
+    core_breadth = math.sqrt(gross_core_area/2) # Assuming a square core for simplicity
+    core_height = gross_core_area / core_breadth
+
     # Step 6 : Revised Magnetic Flux Density
     revised_flux_density = volts_per_turn / (4.44 * freq * gross_core_area * 10**-6) # convert back to Tesla
 
-    return {"Volts per turn": volts_per_turn,"LV turns per phase": lv_turns_per_phase,"Net core area (mm^2)": net_core_area,"Gross core area (mm^2)": gross_core_area,"Revised flux density (T)": revised_flux_density}
+    return {"Volts per turn": volts_per_turn,"LV turns per phase": lv_turns_per_phase,"Net core area (mm^2)": net_core_area,"Gross core area (mm^2)": gross_core_area,"Revised flux density (T)": revised_flux_density, "core breadth (mm)": core_breadth, "core height (mm)": core_height}
 
 
 # Main
