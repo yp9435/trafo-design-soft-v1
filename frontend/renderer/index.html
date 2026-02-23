@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dry Type Transformer Design Software</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<div class="app-container">
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar">
+        <h2 class="sidebar-title">Transformer</h2>
+        <nav class="nav-menu">
+            <button class="nav-item active" type="button">Input</button>
+            <button class="nav-item" type="button">Technical Report</button>
+            <button class="nav-item" type="button">BOM</button>
+            <button class="nav-item" type="button">Layout Design</button>
+            <button class="nav-item" type="button">Rating Plate</button>
+        </nav>
+    </aside>
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main class="main-content">
+
+        <header class="main-header">
+            <h1>Dry Type Transformer Design Software</h1>
+        </header>
+
+        <!-- ================= USER INPUT SECTION ================= -->
+        <section class="panel">
+
+            <h3>User Inputs</h3>
+
+            <form id="transformerForm" autocomplete="off">
+
+                <div class="input-grid">
+
+                    <!-- ========== ELECTRICAL RATINGS ========== -->
+                    <div class="group">
+                        <h4>Electrical Ratings</h4>
+
+                        <label for="ratedPower">Rated Power (kVA)</label>
+                        <input type="number" id="ratedPower" name="ratedPower" required>
+
+                        <label for="phases">Phases</label>
+                        <input type="number" id="phases" name="phases" required>
+
+                        <label for="type">Type</label>
+                        <input type="text" id="type" name="type" value="Dry" readonly>
+
+                        <label for="vectorGroup">Vector Group</label>
+                        <input type="text" id="vectorGroup" name="vectorGroup">
+
+                        <label for="fluxDensity">Flux Density (B)</label>
+                        <input type="number" id="fluxDensity" name="fluxDensity" step="0.01">
+
+                        <label for="insulationClass">Insulation Class</label>
+                        <input type="text" id="insulationClass" name="insulationClass">
+
+                        <label for="frequency">Frequency (Hz)</label>
+                        <input type="number" id="frequency" name="frequency">
+                    </div>
+
+                    <!-- ========== WINDING DETAILS TABLE ========== -->
+                    <div class="group">
+                        <h4>Winding Details</h4>
+
+                        <table class="winding-table">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Parameter</th>
+                                    <th scope="col">LV1</th>
+                                    <th scope="col">LV2</th>
+                                    <th scope="col">HV</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+
+                                <tr>
+                                    <th scope="row">Voltage</th>
+                                    <td><input id="lv1Voltage" name="lv1Voltage" aria-label="LV1 Voltage"></td>
+                                    <td><input id="lv2Voltage" name="lv2Voltage" aria-label="LV2 Voltage"></td>
+                                    <td><input id="hvVoltage" name="hvVoltage" aria-label="HV Voltage"></td>
+                                </tr>
+
+                                <tr>
+                                    <th scope="row">kVA</th>
+                                    <td><input id="lv1kva" name="lv1kva" aria-label="LV1 kVA"></td>
+                                    <td><input id="lv2kva" name="lv2kva" aria-label="LV2 kVA"></td>
+                                    <td><input id="hvkva" name="hvkva" aria-label="HV kVA"></td>
+                                </tr>
+
+                                <tr>
+                                    <th scope="row">Conductor Density</th>
+                                    <td><input id="lv1cd" name="lv1cd" aria-label="LV1 Conductor Density"></td>
+                                    <td><input id="lv2cd" name="lv2cd" aria-label="LV2 Conductor Density"></td>
+                                    <td><input id="hvcd" name="hvcd" aria-label="HV Conductor Density"></td>
+                                </tr>
+
+                                <tr>
+                                    <th scope="row">Conductor Material</th>
+                                    <td>
+                                        <select id="lv1mat" name="lv1mat" aria-label="LV1 Conductor Material">
+                                            <option value="CU">CU</option>
+                                            <option value="AL">AL</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select id="lv2mat" name="lv2mat" aria-label="LV2 Conductor Material">
+                                            <option value="CU">CU</option>
+                                            <option value="AL">AL</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select id="hvmat" name="hvmat" aria-label="HV Conductor Material">
+                                            <option value="CU">CU</option>
+                                            <option value="AL">AL</option>
+                                        </select>
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <th scope="row">Connection Type</th>
+                                    <td>
+                                        <select id="lv1conn" name="lv1conn" aria-label="LV1 Connection Type">
+                                            <option value="D">D</option>
+                                            <option value="Y">Y</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select id="lv2conn" name="lv2conn" aria-label="LV2 Connection Type">
+                                            <option value="D">D</option>
+                                            <option value="Y">Y</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select id="hvconn" name="hvconn" aria-label="HV Connection Type">
+                                            <option value="D">D</option>
+                                            <option value="Y">Y</option>
+                                        </select>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+
+                <!-- RUN BUTTON -->
+                <div class="center-btn">
+                    <button type="submit" id="runBtn" class="primary-btn">
+                        RUN CALCULATION
+                    </button>
+                </div>
+
+            </form>
+        </section>
+
+        <!-- ================= OUTPUT SECTION (HIDDEN INITIALLY) ================= -->
+        <section class="panel hidden" id="outputSection">
+
+            <h3>Calculated Outputs</h3>
+
+            <div class="output-grid">
+
+                <!-- Winding Summary -->
+                <div class="output-group">
+                    <h4>Winding Summary</h4>
+                    <table id="windingOutput" class="output-table"></table>
+                </div>
+
+                <!-- Core Design -->
+                <div class="output-group">
+                    <h4>Core Design</h4>
+                    <div id="coreOutput"></div>
+                </div>
+
+                <!-- Performance -->
+                <div class="output-group">
+                    <h4>Performance</h4>
+                    <div id="performanceOutput"></div>
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+</div>
+
+<script src="renderer.js"></script>
+
+</body>
+</html>
