@@ -1,5 +1,7 @@
 import math
 
+from altair import value
+
 
 class Formulas:
     """
@@ -21,7 +23,7 @@ class Formulas:
         @param kva_rating: Transformer rating in kVA
         @return: Initial volts per turn
         """
-        return design_constant_k * math.sqrt(kva_rating)
+        return round(design_constant_k * math.sqrt(kva_rating), 4)
 
     def volts_per_turn(self, phase_voltage: float, turns_per_phase: float) -> float:
         """
@@ -31,7 +33,7 @@ class Formulas:
         @param turns_per_phase: Number of turns per phase
         @return: Volts per turn
         """
-        return phase_voltage / turns_per_phase
+        return round(phase_voltage / turns_per_phase, 4)
 
     # Voltage & Current (Star / Delta)
 
@@ -82,7 +84,8 @@ class Formulas:
         @return: Net core area (mm^2)
         """
         area_m2 = volts_per_turn / (4.44 * frequency * max_flux_density)
-        return area_m2 * 1e6  # convert m^2 to mm^2
+        area_mm2 = area_m2 * 1e6 
+        return round(area_mm2, 2)
 
     def gross_core_area(self, net_core_area: float) -> float:
         """
@@ -97,6 +100,9 @@ class Formulas:
         return math.ceil(gross_area / 1000) * 1000
 
     # Core Dimensions
+    # Helper Function for rounding
+    def round_to_5(self, value: float) -> int:
+        return int(round(value / 5.0) * 5)
 
     def core_dimensions(self, gross_core_area: float) -> tuple:
         """
@@ -111,7 +117,7 @@ class Formulas:
         """
         tongue = math.sqrt(gross_core_area / 2)
         stack = gross_core_area / tongue
-        return tongue, stack
+        return self.round_to_5(tongue), self.round_to_5(stack)
     
     # Turns Calculation
 
@@ -436,27 +442,38 @@ class Formulas:
 
     def resistance_per_phase_75C(
         self,
-        resistivity_75: float,
+        material: str,
         mean_turn_length: float,
         turns_per_phase: int,
         total_area: float
     ) -> float:
         """
         Calculate resistance per phase at 75°C.
-
-        @param resistivity_75: Resistivity at 75°C (Ohm·mm^2/m)
+        
+        @param material: 'copper' or 'aluminum'
         @param mean_turn_length: Length per turn (m)
         @param turns_per_phase: Turns per phase
         @param total_area: Conductor area (mm^2)
         @return: Resistance at 75°C (Ohm)
         """
+        # Resistivity constants at 75C (Ohm·mm^2/m)
+        resistivity_map = {
+            'cu': 0.0210,
+            'al': 0.0345
+        }
+        
+        rho_75 = resistivity_map.get(material.lower())
+        
+        if rho_75 is None:
+            raise ValueError("Material must be 'copper' or 'aluminum'")
+
         total_length = mean_turn_length * turns_per_phase
-        return (resistivity_75 * total_length) / total_area
+        return (rho_75 * total_length) / total_area
 
     def resistance_at_temperature(
         self,
         resistance_75: float,
-        absolute_temp_constant: float,
+        material: str,
         room_temperature: float
     ) -> float:
         """
@@ -466,10 +483,20 @@ class Formulas:
         R = R75 * (K + T_room) / (K + 75)
 
         @param resistance_75: Resistance at 75°C
-        @param absolute_temp_constant: 234.5 (Cu) or 228 (Al)
+        @param material: 235 (Cu) or 228 (Al)
         @param room_temperature: Room temp (°C)
         @return: Resistance at room temperature
         """
+        constants = {
+        'cu': 235,
+        'al': 228 
+        }
+        
+        absolute_temp_constant = constants.get(material.lower())
+        
+        if absolute_temp_constant is None:
+            raise ValueError("Material must be 'copper' or 'aluminum'")
+        
         return resistance_75 * ((absolute_temp_constant + room_temperature) / (absolute_temp_constant + 75))
 
     # Material Properties
@@ -523,8 +550,8 @@ class Formulas:
         height: float,
         insulated_breadth: float,
         insulated_height: float,
-        insulation_density: float,
-        conductor_density: float
+        conductor_density: float,
+        insulation_density: float = 1.85,
     ) -> float:
         """
         Calculate insulated weight.
@@ -698,3 +725,226 @@ class Formulas:
         )
 
         return load_loss / cooling_area
+    
+    # Core Length
+
+    def core_length(
+        self,
+        tongue_width: float,
+        window_height: float,
+        center_distance: float
+    ) -> float:
+        """
+        Calculate total core length.
+
+        Formula:
+        2*tongue + 3*window_height + 4*center_distance
+
+        @return: Core length (mm)
+        """
+        return (
+            2 * tongue_width
+            + 3 * window_height
+            + 4 * center_distance
+        )
+
+    # Core Material Density
+
+    def core_density(self, material: str) -> float:
+        """
+        Get core material density (g/cm^3).
+
+        @param material: 'CRGO', 'CRNO'
+        @return: Density
+        """
+        material = material.lower()
+
+        densities = {
+            "crgo": 7.65,
+            "crno": 7.70,
+            "amorphous": 7.18
+        }
+
+        if material not in densities:
+            raise ValueError("Invalid core material")
+
+        return densities[material]
+
+    # Core Weight
+
+    def core_weight(
+        self,
+        core_length_mm: float,
+        net_core_area_mm2: float,
+        density_g_per_cm3: float
+    ) -> float:
+        """
+        Calculate core weight.
+
+        @return: Core weight (kg)
+        """
+        length_m = core_length_mm / 1000
+        area_m2 = net_core_area_mm2 / 1e6
+
+        volume_m3 = length_m * area_m2
+
+        # convert density g/cm3 to kg/m3
+        density_kg_m3 = density_g_per_cm3 * 1000
+
+        return volume_m3 * density_kg_m3
+
+    # Core Build Factor
+
+    def core_build_factor(self, core_diameter: float, step_lap: bool = False) -> float:
+        """
+        Get core build factor based on diameter.
+
+        @param core_diameter: Core diameter (mm)
+        @param step_lap: True if step-lap core
+        @return: Build factor
+        """
+
+        if step_lap:
+            if core_diameter <= 300:
+                return 1.20
+            else:
+                return 1.10
+        else:
+            if core_diameter <= 150:
+                return 1.30
+            elif core_diameter <= 300:
+                return 1.25
+            else:
+                return 1.20
+
+    # Table #7 - Specific Core Loss
+
+    def specific_core_loss(self, grade: str, flux_density: float) -> float:
+        """
+        Get specific core loss (W/kg) at 50 Hz.
+
+        Supported grades:
+        'M4', 'M3', '23ZDMH'
+
+        Flux density values available:
+        1.40, 1.50, 1.70, 1.73
+
+        @return: Specific loss (W/kg)
+        """
+
+        table = {
+            "m4": {
+                1.40: 0.70,
+                1.50: 0.83,
+                1.70: 1.01,
+                1.73: 1.33
+            },
+            "m3": {
+                1.40: 0.57,
+                1.50: 0.67,
+                1.70: 0.80,
+                1.73: 1.04
+            },
+            "23zdmh": {
+                1.40: 0.49,
+                1.50: 0.56,
+                1.70: 0.65,
+                1.73: 0.80
+            }
+        }
+
+        grade = grade.lower()
+
+        if grade not in table:
+            raise ValueError("Unsupported core grade")
+
+        # pick nearest flux value
+        available_flux = table[grade].keys()
+        nearest_flux = min(available_flux, key=lambda x: abs(x - flux_density))
+
+        return table[grade][nearest_flux]
+
+    # Core Loss
+
+    def core_loss(
+        self,
+        core_weight: float,
+        specific_loss: float,
+        build_factor: float
+    ) -> float:
+        """
+        Calculate total core loss.
+
+        @return: Core loss (W)
+        """
+        return core_weight * specific_loss * build_factor
+
+    # Enclosure / Tank Design (Need to Check this)
+
+    def enclosure_dimensions(
+        self,
+        winding_outer_width: float,
+        winding_outer_height: float,
+        core_length: float,
+        side_clearance: float = 40,
+        top_bottom_clearance: float = 50
+    ) -> tuple:
+        """
+        Estimate enclosure (tank) dimensions.
+
+        @param winding_outer_width: Winding width (mm)
+        @param winding_outer_height: Winding height (mm)
+        @param core_length: Stack/core length (mm)
+        @param side_clearance: Oil/insulation clearance (mm)
+        @param top_bottom_clearance: Vertical clearance (mm)
+        @return: (tank_length, tank_width, tank_height)
+        """
+
+        tank_length = core_length + 2 * side_clearance
+        tank_width = winding_outer_width + 2 * side_clearance
+        tank_height = winding_outer_height + 2 * top_bottom_clearance
+
+        return tank_length, tank_width, tank_height
+
+    # Active Part Weight
+
+    def active_part_weight(
+        self,
+        core_weight: float,
+        lv1_bare: float,
+        lv2_bare: float,
+        hv_bare: float,
+        insulation_weight: float,
+        procurement_tolerance: float = 0.05
+    ) -> float:
+        """
+        Calculate active part weight.
+
+        @return: Active weight (kg)
+        """
+
+        winding_weight = lv1_bare + lv2_bare + hv_bare + insulation_weight
+
+        total = core_weight + winding_weight
+
+        return total * (1 + procurement_tolerance)
+
+    # Overall Transformer Dimensions
+
+    def overall_transformer_dimensions(
+        self,
+        tank_length: float,
+        tank_width: float,
+        tank_height: float,
+        conservator_height: float = 200
+    ) -> tuple:
+        """
+        Estimate overall transformer size.
+
+        @return: (overall_length, overall_width, overall_height)
+        """
+        overall_length = tank_length
+        overall_width = tank_width
+        overall_height = tank_height + conservator_height
+
+        return overall_length, overall_width, overall_height
