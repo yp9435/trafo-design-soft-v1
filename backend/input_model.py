@@ -31,6 +31,15 @@ class WindingInput(BaseModel):
         ..., 
         description="Connection type: Delta (D) or Star (Y)"
     )
+    
+    axial_parallel: int = Field(
+        ...,
+        description="Number of Axial Parallel Conductors"
+    )
+    radial_parallel: int = Field(
+        ...,
+        description="Number of Radial Parallel Conductors"
+    )
 
     # Material-based validation
     @model_validator(mode="after")
@@ -50,6 +59,19 @@ class WindingInput(BaseModel):
                 )
 
         return self
+
+# Core Material Input Model
+
+class CoreMaterialInput(BaseModel):
+    material: Literal["CRGO", "CRNO"] = Field(
+        ...,
+        description="Core material: Cold Rolled Grain Oriented (CRGO) or Non-Oriented (CRNO)"
+    )
+
+    grade: Literal["M4", "M3", "23ZDMH"] = Field(
+        ...,
+        description="Core steel grade: M4, M3, or 23ZDMH"
+    )
 
 
 # Full Transformer Input Model 
@@ -80,6 +102,8 @@ class TransformerDesignInput(BaseModel):
     lv1: WindingInput = Field(..., description="LV1 winding details")
     lv2: WindingInput = Field(..., description="LV2 winding details")
     hv: WindingInput = Field(..., description="HV winding details")
+    core_material: CoreMaterialInput = Field(..., description="Core material and grade details")
+
     
     @model_validator(mode="after")
     def validate_kva_balance(self):

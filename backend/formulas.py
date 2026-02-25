@@ -1,5 +1,7 @@
 import math
 
+from altair import value
+
 
 class Formulas:
     """
@@ -21,7 +23,7 @@ class Formulas:
         @param kva_rating: Transformer rating in kVA
         @return: Initial volts per turn
         """
-        return design_constant_k * math.sqrt(kva_rating)
+        return round(design_constant_k * math.sqrt(kva_rating), 4)
 
     def volts_per_turn(self, phase_voltage: float, turns_per_phase: float) -> float:
         """
@@ -31,7 +33,7 @@ class Formulas:
         @param turns_per_phase: Number of turns per phase
         @return: Volts per turn
         """
-        return phase_voltage / turns_per_phase
+        return round(phase_voltage / turns_per_phase, 4)
 
     # Voltage & Current (Star / Delta)
 
@@ -82,7 +84,8 @@ class Formulas:
         @return: Net core area (mm^2)
         """
         area_m2 = volts_per_turn / (4.44 * frequency * max_flux_density)
-        return area_m2 * 1e6  # convert m^2 to mm^2
+        area_mm2 = area_m2 * 1e6 
+        return round(area_mm2, 2)
 
     def gross_core_area(self, net_core_area: float) -> float:
         """
@@ -97,6 +100,9 @@ class Formulas:
         return math.ceil(gross_area / 1000) * 1000
 
     # Core Dimensions
+    # Helper Function for rounding
+    def round_to_5(self, value: float) -> int:
+        return int(round(value / 5.0) * 5)
 
     def core_dimensions(self, gross_core_area: float) -> tuple:
         """
@@ -111,7 +117,7 @@ class Formulas:
         """
         tongue = math.sqrt(gross_core_area / 2)
         stack = gross_core_area / tongue
-        return tongue, stack
+        return self.round_to_5(tongue), self.round_to_5(stack)
     
     # Turns Calculation
 
@@ -436,27 +442,38 @@ class Formulas:
 
     def resistance_per_phase_75C(
         self,
-        resistivity_75: float,
+        material: str,
         mean_turn_length: float,
         turns_per_phase: int,
         total_area: float
     ) -> float:
         """
         Calculate resistance per phase at 75°C.
-
-        @param resistivity_75: Resistivity at 75°C (Ohm·mm^2/m)
+        
+        @param material: 'copper' or 'aluminum'
         @param mean_turn_length: Length per turn (m)
         @param turns_per_phase: Turns per phase
         @param total_area: Conductor area (mm^2)
         @return: Resistance at 75°C (Ohm)
         """
+        # Resistivity constants at 75C (Ohm·mm^2/m)
+        resistivity_map = {
+            'cu': 0.0210,
+            'al': 0.0345
+        }
+        
+        rho_75 = resistivity_map.get(material.lower())
+        
+        if rho_75 is None:
+            raise ValueError("Material must be 'copper' or 'aluminum'")
+
         total_length = mean_turn_length * turns_per_phase
-        return (resistivity_75 * total_length) / total_area
+        return (rho_75 * total_length) / total_area
 
     def resistance_at_temperature(
         self,
         resistance_75: float,
-        absolute_temp_constant: float,
+        material: str,
         room_temperature: float
     ) -> float:
         """
@@ -466,10 +483,20 @@ class Formulas:
         R = R75 * (K + T_room) / (K + 75)
 
         @param resistance_75: Resistance at 75°C
-        @param absolute_temp_constant: 234.5 (Cu) or 228 (Al)
+        @param material: 235 (Cu) or 228 (Al)
         @param room_temperature: Room temp (°C)
         @return: Resistance at room temperature
         """
+        constants = {
+        'cu': 235,
+        'al': 228 
+        }
+        
+        absolute_temp_constant = constants.get(material.lower())
+        
+        if absolute_temp_constant is None:
+            raise ValueError("Material must be 'copper' or 'aluminum'")
+        
         return resistance_75 * ((absolute_temp_constant + room_temperature) / (absolute_temp_constant + 75))
 
     # Material Properties
@@ -523,8 +550,8 @@ class Formulas:
         height: float,
         insulated_breadth: float,
         insulated_height: float,
-        insulation_density: float,
-        conductor_density: float
+        conductor_density: float,
+        insulation_density: float = 1.85,
     ) -> float:
         """
         Calculate insulated weight.
