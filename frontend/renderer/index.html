@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dry Type Transformer Design Software</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- ================= SIDEBAR ================= -->
+    <aside class="sidebar">
+        <h2 class="sidebar-title">Transformer</h2>
+        <nav class="nav-menu">
+            <button class="nav-item active" data-page="input" type="button">Input</button>
+            <button class="nav-item" data-page="technical-report" type="button">Technical Report</button>
+            <button class="nav-item" data-page="bom" type="button">BOM</button>
+            <button class="nav-item" data-page="layout-design" type="button">Layout Design</button>
+            <button class="nav-item" data-page="rating-plate" type="button">Rating Plate</button>
+        </nav>
+    </aside>
+
+    <!-- ================= MAIN CONTENT ================= -->
+    <main class="main-content">
+
+        <header class="main-header">
+            <h1>Dry Type Transformer Design Software</h1>
+        </header>
+
+        <!-- ===================== INPUT PAGE ===================== -->
+        <div id="page-input" class="page">
+
+            <div id="errorBanner" class="error-banner hidden">
+                <span class="error-icon">⚠</span>
+                <ul id="errorList" class="error-list"></ul>
+            </div>
+
+            <section class="panel">
+                <h3>User Inputs</h3>
+                <form id="transformerForm" autocomplete="off">
+                    <div class="input-grid">
+
+                        <!-- ELECTRICAL RATINGS -->
+                        <div class="group">
+                            <h4>Electrical Ratings</h4>
+
+                            <label for="ratedPower">Rated Power (kVA)</label>
+                            <input type="number" id="ratedPower" name="ratedPower" min="1" step="1" placeholder="e.g. 100">
+
+                            <label for="phases">Phases</label>
+                            <input type="number" id="phases" name="phases" min="1" max="3" step="1" placeholder="1 or 3">
+
+                            <label for="type">Type</label>
+                            <input type="text" id="type" name="type" value="Dry" readonly>
+
+                            <label for="vectorGroup">Vector Group</label>
+                            <input type="text" id="vectorGroup" name="vectorGroup" placeholder="e.g. Dyn11">
+
+                            <label for="fluxDensity">Flux Density B (T)</label>
+                            <input type="number" id="fluxDensity" name="fluxDensity" step="0.01" placeholder="1.2 – 1.8 T">
+
+                            <label for="insulationClass">Insulation Class</label>
+                            <input type="text" id="insulationClass" name="insulationClass" placeholder="e.g. F">
+
+                            <label for="frequency">Frequency (Hz)</label>
+                            <input type="number" id="frequency" name="frequency" placeholder="50 or 60">
+                        </div>
+
+                        <!-- WINDING DETAILS -->
+                        <div class="group">
+                            <h4>Winding Details</h4>
+                            <table class="winding-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Parameter</th>
+                                        <th scope="col">LV1</th>
+                                        <th scope="col">LV2</th>
+                                        <th scope="col">HV</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th scope="row">Voltage (V)</th>
+                                        <td><input type="number" id="lv1Voltage" name="lv1Voltage" min="1" aria-label="LV1 Voltage" placeholder="V"></td>
+                                        <td><input type="number" id="lv2Voltage" name="lv2Voltage" min="1" aria-label="LV2 Voltage" placeholder="V"></td>
+                                        <td><input type="number" id="hvVoltage" name="hvVoltage" min="1" aria-label="HV Voltage" placeholder="V"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">kVA</th>
+                                        <td><input type="number" id="lv1kva" name="lv1kva" min="0" aria-label="LV1 kVA" placeholder="kVA"></td>
+                                        <td><input type="number" id="lv2kva" name="lv2kva" min="0" aria-label="LV2 kVA" placeholder="kVA"></td>
+                                        <td><input type="number" id="hvkva" name="hvkva" min="0" aria-label="HV kVA" placeholder="kVA"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Current Density (A/mm²)</th>
+                                        <td><input type="number" id="lv1cd" name="lv1cd" step="0.01" aria-label="LV1 Current Density" placeholder="1–4"></td>
+                                        <td><input type="number" id="lv2cd" name="lv2cd" step="0.01" aria-label="LV2 Current Density" placeholder="1–4"></td>
+                                        <td><input type="number" id="hvcd" name="hvcd" step="0.01" aria-label="HV Current Density" placeholder="1–4"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Conductor Material</th>
+                                        <td>
+                                            <select id="lv1mat" name="lv1mat" aria-label="LV1 Material">
+                                                <option value="CU">CU</option>
+                                                <option value="AL">AL</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select id="lv2mat" name="lv2mat" aria-label="LV2 Material">
+                                                <option value="CU">CU</option>
+                                                <option value="AL">AL</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select id="hvmat" name="hvmat" aria-label="HV Material">
+                                                <option value="CU">CU</option>
+                                                <option value="AL">AL</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Connection Type</th>
+                                        <td>
+                                            <select id="lv1conn" name="lv1conn" aria-label="LV1 Connection">
+                                                <option value="D">D</option>
+                                                <option value="Y">Y</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select id="lv2conn" name="lv2conn" aria-label="LV2 Connection">
+                                                <option value="D">D</option>
+                                                <option value="Y">Y</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select id="hvconn" name="hvconn" aria-label="HV Connection">
+                                                <option value="D">D</option>
+                                                <option value="Y">Y</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                    </div>
+
+                    <!-- VALIDATION SUMMARY PANEL -->
+                    <div id="validationSummary" class="val-summary-panel">
+                        <div class="val-summary-ok">Fill in the inputs above to see validation feedback.</div>
+                    </div>
+
+                    <div class="center-btn">
+                        <button type="submit" id="runCalcBtn" class="primary-btn">RUN CALCULATION</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- CALCULATED OUTPUTS -->
+            <section class="panel hidden" id="outputSection">
+                <h3>Calculated Outputs</h3>
+                <div class="output-grid">
+
+                    <div class="output-group">
+                        <h4>Winding Summary</h4>
+                        <table class="output-table">
+                            <thead>
+                                <tr><th></th><th>LV1</th><th>LV2</th><th>HV</th></tr>
+                            </thead>
+                            <tbody id="windingOutputBody"></tbody>
+                        </table>
+                    </div>
+
+                    <div class="output-group">
+                        <h4>Core Design</h4>
+                        <div id="coreOutput" class="kv-list"></div>
+                    </div>
+
+                    <div class="output-group">
+                        <h4>Performance</h4>
+                        <div id="performanceOutput" class="kv-list"></div>
+                    </div>
+
+                </div>
+            </section>
+
+        </div>
+        <!-- end page-input -->
+
+        <!-- ===================== TECHNICAL REPORT PAGE ===================== -->
+        <div id="page-technical-report" class="page hidden">
+
+            <section class="panel tr-panel">
+
+                <!-- Top-level tabs -->
+                <div class="tr-tab-bar">
+                    <button class="tr-tab active" data-tr-tab="core-design" type="button">Core Design</button>
+                    <button class="tr-tab" data-tr-tab="winding-design" type="button">Winding Design</button>
+                </div>
+
+                <!-- ======= CORE DESIGN TAB ======= -->
+                <div id="tr-core-design" class="tr-tab-content">
+
+                    <div class="tr-section-header">SECTION 1: CORE DESIGN</div>
+
+                    <!-- Main core metrics as a proper 2-column table -->
+                    <div class="tr-table-wrapper">
+                        <table class="tr-data-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-param">Parameter</th>
+                                    <th class="col-value">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="coreDesignBody">
+                                <tr><td class="col-param">Volts per Turn</td><td class="col-value">4.8025 V</td></tr>
+                                <tr><td class="col-param">LV Turns per Phase</td><td class="col-value">23 turns</td></tr>
+                                <tr><td class="col-param">Revised Volts per Turn</td><td class="col-value">4.8113 V</td></tr>
+                                <tr><td class="col-param">Net Core Flux Density</td><td class="col-value">1.6 T</td></tr>
+                                <tr><td class="col-param">Gross Core Area</td><td class="col-value">0.0128 m²</td></tr>
+                                <tr><td class="col-param">Core Cross Section</td><td class="col-value">0.0139 m²</td></tr>
+                                <tr><td class="col-param">Window Height</td><td class="col-value">240 mm</td></tr>
+                                <tr><td class="col-param">End Clearance</td><td class="col-value">11 mm</td></tr>
+                                <tr><td class="col-param">Net Winding Length</td><td class="col-value">218 mm</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Cross Conductor Area breakdown — 4-column table -->
+                    <div class="tr-sub-section-header">Cross Conductor Area Calculations</div>
+
+                    <div class="tr-table-wrapper">
+                        <table class="tr-data-table tr-quad-table">
+                            <thead>
+                                <tr>
+                                    <th class="col-param">Parameter</th>
+                                    <th class="col-value">Value</th>
+                                    <th class="col-param">Parameter</th>
+                                    <th class="col-value">Value</th>
+                                </tr>
+                            </thead>
+                            <tbody id="conductorBreakdownBody">
+                                <tr>
+                                    <td class="col-param">Window Height</td>
+                                    <td class="col-value">240 mm</td>
+                                    <td class="col-param">Conductor Breadth</td>
+                                    <td class="col-value">8.20 mm</td>
+                                </tr>
+                                <tr>
+                                    <td class="col-param">End Clearance</td>
+                                    <td class="col-value">11 mm</td>
+                                    <td class="col-param">Conductor Height</td>
+                                    <td class="col-value">5.10 mm</td>
+                                </tr>
+                                <tr>
+                                    <td class="col-param">Net Winding Length</td>
+                                    <td class="col-value">218 mm</td>
+                                    <td class="col-param">Corner Reduction</td>
+                                    <td class="col-value">5 mm</td>
+                                </tr>
+                                <tr>
+                                    <td class="col-param">Winding Length (eff.)</td>
+                                    <td class="col-value">218 mm</td>
+                                    <td class="col-param">Final Gross Conductor Area</td>
+                                    <td class="col-value">33.4 mm²</td>
+                                </tr>
+                                <tr>
+                                    <td class="col-param">End Clearances (total)</td>
+                                    <td class="col-value">218 mm</td>
+                                    <td class="col-param">Number of Parallel Conductors</td>
+                                    <td class="col-value">1</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+                <!-- end tr-core-design -->
+
+                <!-- ======= WINDING DESIGN TAB ======= -->
+                <div id="tr-winding-design" class="tr-tab-content hidden">
+
+                    <div class="tr-section-header">SECTION 2: WINDING DESIGN</div>
+
+                    <div class="winding-sub-tab-bar">
+                        <button class="winding-sub-tab active" data-winding-tab="lv1" type="button">LV1</button>
+                        <button class="winding-sub-tab" data-winding-tab="lv2" type="button">LV2</button>
+                        <button class="winding-sub-tab" data-winding-tab="hv" type="button">HV</button>
+                    </div>
+
+                    <!-- LV1 -->
+                    <div id="winding-lv1" class="winding-sub-content">
+                        <div class="tr-table-wrapper">
+                            <table class="tr-data-table">
+                                <thead>
+                                    <tr><th class="col-param">Parameter</th><th class="col-value">Value</th></tr>
+                                </thead>
+                                <tbody id="windingLV1Body">
+                                    <tr><td class="col-param">Voltage per Phase</td><td class="col-value">190 / √3 V</td></tr>
+                                    <tr><td class="col-param">Current per Phase</td><td class="col-value">15.2 A</td></tr>
+                                    <tr><td class="col-param">Turns per Phase</td><td class="col-value">23 turns</td></tr>
+                                    <tr><td class="col-param">Number of Layers</td><td class="col-value">1</td></tr>
+                                    <tr><td class="col-param">Turns per Layer</td><td class="col-value">23</td></tr>
+                                    <tr><td class="col-param">Number of Parallel Conductors</td><td class="col-value">1</td></tr>
+                                    <tr><td class="col-param">Conductor Breadth</td><td class="col-value">7 mm &amp; 7.1 mm</td></tr>
+                                    <tr><td class="col-param">Conductor Height</td><td class="col-value">1.5 mm &amp; 1.6 mm</td></tr>
+                                    <tr><td class="col-param">Total Cross Section</td><td class="col-value">10.5 mm²</td></tr>
+                                    <tr><td class="col-param">Current Density</td><td class="col-value">1.45 A/mm²</td></tr>
+                                    <tr><td class="col-param">Inter Layer Insulation</td><td class="col-value">-0.09</td></tr>
+                                    <tr><td class="col-param">Radial Thickness</td><td class="col-value">2 mm</td></tr>
+                                    <tr><td class="col-param">Mean Turn Length (LMT)</td><td class="col-value">0.5746 m</td></tr>
+                                    <tr><td class="col-param">Wire Length</td><td class="col-value">40 m</td></tr>
+                                    <tr><td class="col-param">Resistance per Phase at 75°C</td><td class="col-value">0.023 Ω</td></tr>
+                                    <tr><td class="col-param">Bare / Insulated / Procurement Weight</td><td class="col-value">3.7 / 3.76 / 3.8 kg</td></tr>
+                                    <tr><td class="col-param">Stray Loss</td><td class="col-value">0.004 %</td></tr>
+                                    <tr><td class="col-param">Load Loss</td><td class="col-value">20 W</td></tr>
+                                    <tr><td class="col-param">Winding Gradient</td><td class="col-value">7.5 °C</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- LV2 -->
+                    <div id="winding-lv2" class="winding-sub-content hidden">
+                        <div class="tr-table-wrapper">
+                            <table class="tr-data-table">
+                                <thead>
+                                    <tr><th class="col-param">Parameter</th><th class="col-value">Value</th></tr>
+                                </thead>
+                                <tbody id="windingLV2Body">
+                                    <tr><td class="col-param">Voltage per Phase</td><td class="col-value">415 / √3 V</td></tr>
+                                    <tr><td class="col-param">Current per Phase</td><td class="col-value">12.6 A</td></tr>
+                                    <tr><td class="col-param">Turns per Phase</td><td class="col-value">50 turns</td></tr>
+                                    <tr><td class="col-param">Number of Layers</td><td class="col-value">1</td></tr>
+                                    <tr><td class="col-param">Turns per Layer</td><td class="col-value">50</td></tr>
+                                    <tr><td class="col-param">Number of Parallel Conductors</td><td class="col-value">1</td></tr>
+                                    <tr><td class="col-param">Conductor Breadth</td><td class="col-value">6 mm &amp; 6.1 mm</td></tr>
+                                    <tr><td class="col-param">Conductor Height</td><td class="col-value">1.4 mm &amp; 1.5 mm</td></tr>
+                                    <tr><td class="col-param">Total Cross Section</td><td class="col-value">8.4 mm²</td></tr>
+                                    <tr><td class="col-param">Current Density</td><td class="col-value">1.50 A/mm²</td></tr>
+                                    <tr><td class="col-param">Inter Layer Insulation</td><td class="col-value">-0.07</td></tr>
+                                    <tr><td class="col-param">Radial Thickness</td><td class="col-value">2 mm</td></tr>
+                                    <tr><td class="col-param">Mean Turn Length (LMT)</td><td class="col-value">0.6012 m</td></tr>
+                                    <tr><td class="col-param">Wire Length</td><td class="col-value">90 m</td></tr>
+                                    <tr><td class="col-param">Resistance per Phase at 75°C</td><td class="col-value">0.061 Ω</td></tr>
+                                    <tr><td class="col-param">Bare / Insulated / Procurement Weight</td><td class="col-value">2.9 / 2.95 / 3.0 kg</td></tr>
+                                    <tr><td class="col-param">Stray Loss</td><td class="col-value">0.005 %</td></tr>
+                                    <tr><td class="col-param">Load Loss</td><td class="col-value">18 W</td></tr>
+                                    <tr><td class="col-param">Winding Gradient</td><td class="col-value">6.8 °C</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- HV -->
+                    <div id="winding-hv" class="winding-sub-content hidden">
+                        <div class="tr-table-wrapper">
+                            <table class="tr-data-table">
+                                <thead>
+                                    <tr><th class="col-param">Parameter</th><th class="col-value">Value</th></tr>
+                                </thead>
+                                <tbody id="windingHVBody">
+                                    <tr><td class="col-param">Voltage per Phase</td><td class="col-value">11000 / √3 V</td></tr>
+                                    <tr><td class="col-param">Current per Phase</td><td class="col-value">2.62 A</td></tr>
+                                    <tr><td class="col-param">Turns per Phase</td><td class="col-value">1320 turns</td></tr>
+                                    <tr><td class="col-param">Number of Layers</td><td class="col-value">8</td></tr>
+                                    <tr><td class="col-param">Turns per Layer</td><td class="col-value">165</td></tr>
+                                    <tr><td class="col-param">Number of Parallel Conductors</td><td class="col-value">1</td></tr>
+                                    <tr><td class="col-param">Conductor Breadth</td><td class="col-value">1.8 mm &amp; 1.9 mm</td></tr>
+                                    <tr><td class="col-param">Conductor Height</td><td class="col-value">1.0 mm &amp; 1.1 mm</td></tr>
+                                    <tr><td class="col-param">Total Cross Section</td><td class="col-value">1.8 mm²</td></tr>
+                                    <tr><td class="col-param">Current Density</td><td class="col-value">1.46 A/mm²</td></tr>
+                                    <tr><td class="col-param">Inter Layer Insulation</td><td class="col-value">0.50</td></tr>
+                                    <tr><td class="col-param">Radial Thickness</td><td class="col-value">18 mm</td></tr>
+                                    <tr><td class="col-param">Mean Turn Length (LMT)</td><td class="col-value">0.7820 m</td></tr>
+                                    <tr><td class="col-param">Wire Length</td><td class="col-value">3082 m</td></tr>
+                                    <tr><td class="col-param">Resistance per Phase at 75°C</td><td class="col-value">28.4 Ω</td></tr>
+                                    <tr><td class="col-param">Bare / Insulated / Procurement Weight</td><td class="col-value">4.1 / 4.2 / 4.3 kg</td></tr>
+                                    <tr><td class="col-param">Stray Loss</td><td class="col-value">0.003 %</td></tr>
+                                    <tr><td class="col-param">Load Loss</td><td class="col-value">22 W</td></tr>
+                                    <tr><td class="col-param">Winding Gradient</td><td class="col-value">8.1 °C</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- end tr-winding-design -->
+
+                <!-- Download bar -->
+                <div class="tr-download-bar">
+                    <button class="download-btn" id="downloadPdfBtn" type="button">⬇ Download Technical Report as PDF</button>
+                </div>
+
+            </section>
+        </div>
+        <!-- end page-technical-report -->
+
+        <!-- ===================== BOM PAGE ===================== -->
+        <div id="page-bom" class="page hidden">
+
+            <!-- Header bar -->
+            <div class="bom-header-bar">
+                <h2 class="bom-title">BILL OF MATERIALS (BOM)</h2>
+                <div class="bom-meta">
+                    <span>Transformer Rating: <strong id="bomRating">— kVA</strong></span>
+                    <span class="bom-meta-sep">|</span>
+                    <span>Serial Number: <strong>2025-001</strong></span>
+                    <span class="bom-meta-sep">|</span>
+                    <span>Currency: ₹ Indian Rupees</span>
+                </div>
+            </div>
+
+            <!-- Two-column layout: left = tables, right = cost summary -->
+            <div class="bom-layout">
+
+                <!-- LEFT: material tables -->
+                <div class="bom-left">
+
+                    <!-- Core Material -->
+                    <div class="bom-section">
+                        <h4 class="bom-section-title">Core Material</h4>
+                        <div class="tr-table-wrapper">
+                            <table class="tr-data-table bom-table">
+                                <thead>
+                                    <tr>
+                                        <th>Category</th>
+                                        <th>Material</th>
+                                        <th>Grade</th>
+                                        <th class="col-num">Quantity (kg)</th>
+                                        <th class="col-num">Rate (₹/kg)</th>
+                                        <th class="col-num">Total Cost (₹)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bomCoreBody">
+                                    <tr>
+                                        <td>Core</td>
+                                        <td>CRGO-Silicon Steel</td>
+                                        <td>M4</td>
+                                        <td class="col-num">285</td>
+                                        <td class="col-num">₹ 210</td>
+                                        <td class="col-num bom-cost">₹ 59,850</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Winding Materials -->
+                    <div class="bom-section">
+                        <h4 class="bom-section-title">Winding Materials</h4>
+                        <div class="tr-table-wrapper">
+                            <table class="tr-data-table bom-table">
+                                <thead>
+                                    <tr>
+                                        <th>Winding</th>
+                                        <th>Material</th>
+                                        <th>Conductor Type</th>
+                                        <th class="col-num">Weight (kg)</th>
+                                        <th class="col-num">Rate (₹/kg)</th>
+                                        <th class="col-num">Total Cost (₹)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="bomWindingBody">
+                                    <tr>
+                                        <td class="bom-winding-label lv">LV1</td>
+                                        <td>Copper</td>
+                                        <td>Rectangular</td>
+                                        <td class="col-num">45 kg</td>
+                                        <td class="col-num">₹ 850</td>
+                                        <td class="col-num bom-cost">₹ 38,250</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bom-winding-label lv">LV2</td>
+                                        <td>Copper</td>
+                                        <td>Rectangular</td>
+                                        <td class="col-num">42 kg</td>
+                                        <td class="col-num">₹ 850</td>
+                                        <td class="col-num bom-cost">₹ 35,700</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bom-winding-label hv">HV</td>
+                                        <td>Copper</td>
+                                        <td>Round</td>
+                                        <td class="col-num">55 kg</td>
+                                        <td class="col-num">₹ 850</td>
+                                        <td class="col-num bom-cost">₹ 46,750</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+
+
+                </div>
+                <!-- end bom-left -->
+
+                <!-- RIGHT: Cost summary card -->
+                <div class="bom-right">
+                    <div class="bom-cost-card">
+                        <h4 class="bom-cost-title">Cost Summary</h4>
+
+                        <div class="bom-cost-row">
+                            <span class="bom-cost-label">Core Cost:</span>
+                            <span class="bom-cost-val">₹ 59,850</span>
+                        </div>
+                        <div class="bom-cost-row">
+                            <span class="bom-cost-label">Winding Cost:</span>
+                            <span class="bom-cost-val">₹ 1,20,700</span>
+                        </div>
+                        <div class="bom-cost-row">
+                            <span class="bom-cost-label">Insulation &amp; Misc.:</span>
+                            <span class="bom-cost-val">₹ 19,250</span>
+                        </div>
+
+                        <div class="bom-cost-total-row">
+                            <span class="bom-cost-total-label">TOTAL MATERIAL COST:</span>
+                            <span class="bom-cost-total-val">₹ 1,99,800</span>
+                        </div>
+
+                        <p class="bom-margin-note">Estimated Manufacturing Margin (1290)</p>
+
+                        <div class="bom-final-label">Final Estimated Cost:</div>
+                        <div class="bom-final-val">₹ 2,23,776</div>
+                    </div>
+                </div>
+
+            </div>
+            <!-- end bom-layout -->
+
+            <!-- Download / Print bar -->
+            <div class="bom-action-bar">
+                <button class="bom-action-btn" type="button" id="bomDownloadPdf">⬇ DOWNLOAD BOM (PDF)</button>
+                <button class="bom-action-btn" type="button" id="bomDownloadExcel">⬇ DOWNLOAD BOM (Excel)</button>
+                <button class="bom-action-btn bom-print-btn" type="button" id="bomPrint">🖨 PRINT BOM</button>
+            </div>
+
+        </div>
+        <!-- end page-bom -->
+        <!-- ===================== LAYOUT DESIGN PAGE ===================== -->
+        <div id="page-layout-design" class="page hidden">
+
+            <div class="ld-page-wrap">
+
+                <div class="ld-title-bar">
+                    <h2 class="ld-title">Layout Design</h2>
+                    <span class="ld-subtitle" id="ldRatingLabel">— kVA Transformer</span>
+                </div>
+
+                <div class="ld-main-grid">
+
+                    <!-- LEFT: 3 diagrams -->
+                    <div class="ld-diagrams" id="ldExportArea">
+
+                        <div class="ld-diagram-card">
+                            <div class="ld-diagram-label">Front View — Core &amp; Winding Assembly</div>
+                            <div class="ld-canvas-wrap">
+                                <canvas id="canvasFront" width="560" height="320"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="ld-diagram-card">
+                            <div class="ld-diagram-label">Side Elevation — Core Stack</div>
+                            <div class="ld-canvas-wrap">
+                                <canvas id="canvasSide" width="560" height="260"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="ld-diagram-card">
+                            <div class="ld-diagram-label">Plan View — Core Footprint</div>
+                            <div class="ld-canvas-wrap">
+                                <canvas id="canvasTop" width="560" height="220"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="ld-axial-box">
+                            <div class="ld-axial-title">Axial Dimensions</div>
+                            <div class="ld-axial-grid">
+                                <div class="ld-axial-item">• LV1 Height: <strong id="ldAxLV1">—</strong></div>
+                                <div class="ld-axial-item">• LV2 Height: <strong id="ldAxLV2">—</strong></div>
+                                <div class="ld-axial-item">• HV Height: <strong id="ldAxHV">—</strong></div>
+                                <div class="ld-axial-item">• Yoke Height: <strong id="ldAxYoke">—</strong></div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- RIGHT: sidebar -->
+                    <div class="ld-sidebar">
+
+                        <div class="ld-dim-card">
+                            <div class="ld-dim-title">Radial Dimensions</div>
+                            <div class="ld-dim-row"><span class="ld-dim-lbl">• Core Diameter:</span><span class="ld-dim-val" id="ldCoreDia">—</span></div>
+                            <div class="ld-dim-row"><span class="ld-dim-lbl">• LV1:</span><span class="ld-dim-val" id="ldLV1rad">—</span></div>
+                            <div class="ld-dim-row"><span class="ld-dim-lbl">• Duct:</span><span class="ld-dim-val" id="ldDuct1">—</span></div>
+                            <div class="ld-dim-row"><span class="ld-dim-lbl">• LV2:</span><span class="ld-dim-val" id="ldLV2rad">—</span></div>
+                            <div class="ld-dim-row"><span class="ld-dim-lbl">• Duct:</span><span class="ld-dim-val" id="ldDuct2">—</span></div>
+                            <div class="ld-dim-row"><span class="ld-dim-lbl">• HV:</span><span class="ld-dim-val" id="ldHVrad">—</span></div>
+                        </div>
+
+                        <div class="ld-dim-card" style="margin-top:18px;">
+                            <div class="ld-dim-title">Axial Dimensions</div>
+                            <div class="ld-dim-row"><span class="ld-dim-lbl">• LV1 Height:</span><span class="ld-dim-val" id="ldLV1ax">—</span></div>
+                            <div class="ld-dim-row"><span class="ld-dim-lbl">• LV2 Height:</span><span class="ld-dim-val" id="ldLV2ax">—</span></div>
+                            <div class="ld-dim-row"><span class="ld-dim-lbl">• HV Height:</span><span class="ld-dim-val" id="ldHVax">—</span></div>
+                            <div class="ld-dim-row"><span class="ld-dim-lbl">• Yoke Height:</span><span class="ld-dim-val" id="ldYokeax">—</span></div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="ld-export-bar">
+                    <button class="ld-export-btn ld-btn-pdf" id="ldExportPdf" type="button">EXPORT TO PDF</button>
+                    <button class="ld-export-btn ld-btn-svg" id="ldExportSvg" type="button">EXPORT TO SVG</button>
+                </div>
+
+            </div>
+
+        </div>
+        <!-- end page-layout-design -->
+        <!-- ===================== RATING PLATE PAGE ===================== -->
+        <div id="page-rating-plate" class="page hidden">
+
+            <div class="rp-page-wrap">
+
+                <!-- The actual rating plate — this is what gets exported -->
+                <div id="ratingPlateExport">
+                <div class="rp-plate">
+
+                    <!-- Company header -->
+                    <div class="rp-company-header">
+                        <div class="rp-company-name">DISHA TRANSFORMERS</div>
+                        <div class="rp-company-addr">PLOT NO.13, ALINDRA SAVLI IND. ESTATE</div>
+                        <div class="rp-company-addr">MANJUSAR, TAL: SAVLI, DIST. VADODARA</div>
+                        <div class="rp-product-title">3 PHASE AL. WOUND DISTRIBUTION TRANSFORMER</div>
+                    </div>
+
+                    <!-- Main data grid -->
+                    <div class="rp-data-section">
+
+                        <!-- LEFT column -->
+                        <div class="rp-col rp-col-left">
+
+                            <div class="rp-row">
+                                <span class="rp-lbl">STANDARD</span>
+                                <span class="rp-val">IS 1180:2014 (1)</span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">KVA</span>
+                                <span class="rp-val" id="rp-kva">10</span>
+                            </div>
+                            <div class="rp-row rp-row-bracket">
+                                <span class="rp-lbl">VOLTS AT</span>
+                                <span class="rp-bracket-vals">
+                                    <span class="rp-bracket-row"><span class="rp-sublbl">HV</span><span class="rp-val" id="rp-hv-volts">11000</span></span>
+                                    <span class="rp-bracket-row"><span class="rp-sublbl">LV</span><span class="rp-val" id="rp-lv-volts">433</span></span>
+                                </span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">NO LOAD</span>
+                                <span class="rp-val">—</span>
+                            </div>
+                            <div class="rp-row rp-row-bracket">
+                                <span class="rp-lbl">BIL</span>
+                                <span class="rp-bracket-vals">
+                                    <span class="rp-bracket-row"><span class="rp-sublbl">HV</span><span class="rp-val">95 KVP</span></span>
+                                    <span class="rp-bracket-row"><span class="rp-sublbl">LV</span><span class="rp-val">—</span></span>
+                                </span>
+                            </div>
+                            <div class="rp-row rp-row-bracket">
+                                <span class="rp-lbl">AMP.</span>
+                                <span class="rp-bracket-vals">
+                                    <span class="rp-bracket-row"><span class="rp-sublbl">HV</span><span class="rp-val" id="rp-hv-amp">0.525</span></span>
+                                    <span class="rp-bracket-row"><span class="rp-sublbl">LV</span><span class="rp-val" id="rp-lv-amp">13.33</span></span>
+                                </span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">WINDING</span>
+                                <span class="rp-val">ALU.</span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">TYPE OF COOLING</span>
+                                <span class="rp-val">ONAN</span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">VECTOR GROUP</span>
+                                <span class="rp-val" id="rp-vector">DYN-11</span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">IMP VOLTS %</span>
+                                <span class="rp-val" id="rp-imp">4.5</span>
+                            </div>
+
+                        </div>
+
+                        <!-- RIGHT column -->
+                        <div class="rp-col rp-col-right">
+
+                            <div class="rp-row">
+                                <span class="rp-lbl">ENERGY EFFICIENCY</span>
+                                <span class="rp-val">NA</span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">FREQUENCY</span>
+                                <span class="rp-val" id="rp-freq">50</span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">IMPEDANCE VOLTAGE</span>
+                                <span class="rp-val">4.5%</span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">CORE-WINDING WT.</span>
+                                <span class="rp-val">85</span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">WEIGHT OF OIL</span>
+                                <span class="rp-val">64</span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">TOTAL WEIGHT</span>
+                                <span class="rp-val">236</span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">OIL IN LITRES</span>
+                                <span class="rp-val">79</span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">YEAR OF MANU.</span>
+                                <span class="rp-val" id="rp-year">2024</span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">TOTAL LOSSES AT 50% LOAD</span>
+                                <span class="rp-val">84</span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">TOTAL LOSSES AT 100% LOAD</span>
+                                <span class="rp-val">216</span>
+                            </div>
+                            <div class="rp-row">
+                                <span class="rp-lbl">SR. NO.</span>
+                                <span class="rp-val rp-sr">DTR/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;184</span>
+                            </div>
+
+                        </div>
+
+                    </div>
+                    <!-- end rp-data-section -->
+
+                    <!-- Full-width row: guaranteed max temp rise -->
+                    <div class="rp-full-row">
+                        <span class="rp-lbl">GAURANTEED MAX TEMP RISE IN OIL/WNDG</span>
+                        <span class="rp-val">°C 35/40</span>
+                    </div>
+
+                    <!-- No load / full load losses row -->
+                    <div class="rp-losses-row">
+                        <span class="rp-lbl">NO LOAD LOSSES</span>
+                        <span class="rp-val rp-val-box">40</span>
+                        <span class="rp-lbl rp-lbl-mid">FULL LOAD LOSSES</span>
+                        <span class="rp-val rp-val-box">176</span>
+                    </div>
+
+                    <!-- Customer rows -->
+                    <div class="rp-customer-row"><span class="rp-lbl">CUSTOMER</span><span class="rp-val rp-underline"></span></div>
+                    <div class="rp-customer-row"><span class="rp-lbl">CUSTOMER REF</span><span class="rp-val rp-underline"></span></div>
+                    <div class="rp-customer-row"><span class="rp-lbl">DATE OF DESP.</span><span class="rp-val rp-underline"></span></div>
+
+                    <!-- Bottom section: winding diagram + ISI mark + vector diagram -->
+                    <div class="rp-bottom-section">
+
+                        <!-- ① WINDING CONNECTION DIAGRAM -->
+                        <div class="rp-diagram">
+                            <svg viewBox="0 0 175 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:130px;">
+                                <!-- ── HV terminals top row: 2N 2U 2V 2W ── -->
+                                <!-- bushing circles -->
+                                <circle cx="22"  cy="10" r="5" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <circle cx="62"  cy="10" r="5" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <circle cx="102" cy="10" r="5" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <circle cx="142" cy="10" r="5" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <!-- labels -->
+                                <text x="22"  y="5"  font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold">2N</text>
+                                <text x="62"  y="5"  font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold">2U</text>
+                                <text x="102" y="5"  font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold">2V</text>
+                                <text x="142" y="5"  font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold">2W</text>
+                                <!-- vertical leads from HV terminals down to coil tops -->
+                                <line x1="62"  y1="15" x2="62"  y2="27" stroke="#000" stroke-width="1"/>
+                                <line x1="102" y1="15" x2="102" y2="27" stroke="#000" stroke-width="1"/>
+                                <line x1="142" y1="15" x2="142" y2="27" stroke="#000" stroke-width="1"/>
+                                <!-- 2N (neutral) lead down to bottom bus -->
+                                <line x1="22" y1="15" x2="22" y2="80" stroke="#000" stroke-width="1"/>
+
+                                <!-- ── HV coils (3 rectangles with horizontal lines = winding symbol) ── -->
+                                <!-- Coil U -->
+                                <rect x="54" y="27" width="16" height="30" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <line x1="54" y1="33" x2="70" y2="33" stroke="#000" stroke-width="0.6"/>
+                                <line x1="54" y1="39" x2="70" y2="39" stroke="#000" stroke-width="0.6"/>
+                                <line x1="54" y1="45" x2="70" y2="45" stroke="#000" stroke-width="0.6"/>
+                                <line x1="54" y1="51" x2="70" y2="51" stroke="#000" stroke-width="0.6"/>
+                                <!-- Coil V -->
+                                <rect x="94" y="27" width="16" height="30" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <line x1="94"  y1="33" x2="110" y2="33" stroke="#000" stroke-width="0.6"/>
+                                <line x1="94"  y1="39" x2="110" y2="39" stroke="#000" stroke-width="0.6"/>
+                                <line x1="94"  y1="45" x2="110" y2="45" stroke="#000" stroke-width="0.6"/>
+                                <line x1="94"  y1="51" x2="110" y2="51" stroke="#000" stroke-width="0.6"/>
+                                <!-- Coil W -->
+                                <rect x="134" y="27" width="16" height="30" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <line x1="134" y1="33" x2="150" y2="33" stroke="#000" stroke-width="0.6"/>
+                                <line x1="134" y1="39" x2="150" y2="39" stroke="#000" stroke-width="0.6"/>
+                                <line x1="134" y1="45" x2="150" y2="45" stroke="#000" stroke-width="0.6"/>
+                                <line x1="134" y1="51" x2="150" y2="51" stroke="#000" stroke-width="0.6"/>
+
+                                <!-- ── HV coil bottom leads → common neutral bus ── -->
+                                <line x1="62"  y1="57" x2="62"  y2="80" stroke="#000" stroke-width="1"/>
+                                <line x1="102" y1="57" x2="102" y2="80" stroke="#000" stroke-width="1"/>
+                                <line x1="142" y1="57" x2="142" y2="80" stroke="#000" stroke-width="1"/>
+                                <!-- Horizontal neutral bus 2N -->
+                                <line x1="22" y1="80" x2="142" y2="80" stroke="#000" stroke-width="1.2"/>
+
+                                <!-- ── LV coils (3 small rects below) ── -->
+                                <!-- LV Coil U -->
+                                <rect x="54" y="85" width="16" height="22" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <line x1="54" y1="90" x2="70" y2="90" stroke="#000" stroke-width="0.6"/>
+                                <line x1="54" y1="95" x2="70" y2="95" stroke="#000" stroke-width="0.6"/>
+                                <line x1="54" y1="100" x2="70" y2="100" stroke="#000" stroke-width="0.6"/>
+                                <!-- LV Coil V -->
+                                <rect x="94" y="85" width="16" height="22" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <line x1="94"  y1="90" x2="110" y2="90" stroke="#000" stroke-width="0.6"/>
+                                <line x1="94"  y1="95" x2="110" y2="95" stroke="#000" stroke-width="0.6"/>
+                                <line x1="94"  y1="100" x2="110" y2="100" stroke="#000" stroke-width="0.6"/>
+                                <!-- LV Coil W -->
+                                <rect x="134" y="85" width="16" height="22" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <line x1="134" y1="90"  x2="150" y2="90"  stroke="#000" stroke-width="0.6"/>
+                                <line x1="134" y1="95"  x2="150" y2="95"  stroke="#000" stroke-width="0.6"/>
+                                <line x1="134" y1="100" x2="150" y2="100" stroke="#000" stroke-width="0.6"/>
+
+                                <!-- ── LV terminal bushings + crossover wires ── -->
+                                <!-- 1U at bottom of coil U → bushing -->
+                                <line x1="62"  y1="107" x2="62"  y2="115" stroke="#000" stroke-width="1"/>
+                                <circle cx="62"  cy="118" r="3.5" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <text x="62"  y="128" font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold">1U</text>
+
+                                <!-- 1V: crossover from coil V -->
+                                <line x1="102" y1="107" x2="102" y2="113" stroke="#000" stroke-width="1"/>
+                                <!-- crossover arc (line going left over 1U) -->
+                                <path d="M102,113 Q82,108 62,113" fill="none" stroke="#000" stroke-width="1"/>
+                                <circle cx="102" cy="118" r="3.5" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <text x="102" y="128" font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold">1V</text>
+
+                                <!-- 1W: crossover from coil W -->
+                                <line x1="142" y1="107" x2="142" y2="111" stroke="#000" stroke-width="1"/>
+                                <path d="M142,111 Q102,104 62,111" fill="none" stroke="#000" stroke-width="1"/>
+                                <circle cx="142" cy="118" r="3.5" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <text x="142" y="128" font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold">1W</text>
+
+                                <!-- outer box -->
+                                <rect x="2" y="2" width="171" height="126" fill="none" stroke="#000" stroke-width="1.2"/>
+                            </svg>
+                        </div>
+
+                        <!-- ② ISI MARK (govt logo via CDN/public domain SVG) -->
+                        <div class="rp-isi-block">
+                            <div class="rp-isi-std">IS:1180:2014 PART 1</div>
+                            <!-- ISI mark — faithful recreation as inline SVG -->
+                            <svg viewBox="0 0 80 80" width="70" height="70" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:4px auto;">
+                                <!-- Outer rounded square border -->
+                                <rect x="3" y="3" width="74" height="74" rx="8" ry="8" fill="none" stroke="#000" stroke-width="3"/>
+                                <!-- Inner border -->
+                                <rect x="7" y="7" width="66" height="66" rx="5" ry="5" fill="none" stroke="#000" stroke-width="1.5"/>
+                                <!-- ISI letters -->
+                                <!-- I -->
+                                <rect x="11" y="20" width="6" height="40" fill="#000"/>
+                                <rect x="9"  y="18" width="10" height="5" fill="#000"/>
+                                <rect x="9"  y="57" width="10" height="5" fill="#000"/>
+                                <!-- S -->
+                                <path d="M24,22 Q24,18 34,18 Q44,18 44,26 Q44,32 34,34 Q24,36 24,44 Q24,52 34,52 Q44,52 44,48" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/>
+                                <!-- I (right) -->
+                                <rect x="48" y="20" width="6" height="40" fill="#000"/>
+                                <rect x="46" y="18" width="10" height="5" fill="#000"/>
+                                <rect x="46" y="57" width="10" height="5" fill="#000"/>
+                                <!-- Small India text baseline -->
+                                <text x="40" y="72" font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold" fill="#000">INDIA</text>
+                            </svg>
+                            <div class="rp-isi-cm">CM/L-7200112687</div>
+                            <div class="rp-isi-mii">MADE IN INDIA</div>
+                        </div>
+
+                        <!-- ③ VECTOR DIAGRAM — accurate Dyn11 phasor -->
+                        <div class="rp-vector-block">
+                            <div class="rp-vector-label" style="font-size:9px;font-weight:700;margin-bottom:2px;">Dyn 11</div>
+                            <svg viewBox="0 0 140 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:108px;">
+                                <!--
+                                  Dyn11: HV = Delta, LV = Star, clock position 11
+                                  Delta triangle: vertices at top(70,12), bottom-right(118,88), bottom-left(22,88)
+                                  Star neutral at centre of triangle base midpoint: (70,88)
+                                  LV phasors at clock 11 position (30° lag from HV)
+                                -->
+
+                                <!-- ── Delta (HV) triangle ── -->
+                                <line x1="70"  y1="12"  x2="118" y2="88" stroke="#000" stroke-width="1.5"/>
+                                <line x1="118" y1="88"  x2="22"  y2="88" stroke="#000" stroke-width="1.5"/>
+                                <line x1="22"  y1="88"  x2="70"  y2="12" stroke="#000" stroke-width="1.5"/>
+
+                                <!-- Delta vertex dots -->
+                                <circle cx="70"  cy="12"  r="2.5" fill="#000"/>
+                                <circle cx="118" cy="88"  r="2.5" fill="#000"/>
+                                <circle cx="22"  cy="88"  r="2.5" fill="#000"/>
+
+                                <!-- HV labels -->
+                                <text x="70"  y="9"   font-size="8" text-anchor="middle" font-family="Arial" font-weight="bold">1U</text>
+                                <text x="122" y="92"  font-size="8" text-anchor="start"  font-family="Arial" font-weight="bold">2V</text>
+                                <text x="4"   y="92"  font-size="8" text-anchor="start"  font-family="Arial" font-weight="bold">2U</text>
+
+                                <!-- ── Star (LV) — neutral at (70,88), phasors at clock 11 ── -->
+                                <!-- Dyn11: LV 1W points straight up (to top of delta) -->
+                                <!-- neutral point -->
+                                <circle cx="70" cy="88" r="2" fill="#000"/>
+
+                                <!-- 1W: up toward top vertex at (70,12) — same direction as 1U of delta -->
+                                <line x1="70" y1="88" x2="70" y2="30" stroke="#000" stroke-width="1.5"/>
+                                <circle cx="70" cy="30" r="2" fill="#000"/>
+                                <text x="73" y="28" font-size="8" text-anchor="start" font-family="Arial" font-weight="bold">1W</text>
+
+                                <!-- 2W: lower-right, 120° from 1W -->
+                                <line x1="70" y1="88" x2="104" y2="107" stroke="#000" stroke-width="1.5"/>
+                                <circle cx="104" cy="107" r="2" fill="#000"/>
+                                <text x="106" y="110" font-size="8" text-anchor="start" font-family="Arial" font-weight="bold">2W</text>
+
+                                <!-- 1V: lower-left, 240° from 1W -->
+                                <line x1="70" y1="88" x2="36" y2="107" stroke="#000" stroke-width="1.5"/>
+                                <circle cx="36" cy="107" r="2" fill="#000"/>
+                                <text x="20" y="110" font-size="8" text-anchor="start" font-family="Arial" font-weight="bold">1V</text>
+
+                                <!-- CONVENTIONAL box -->
+                                <rect x="30" y="112" width="80" height="10" fill="none" stroke="#000" stroke-width="1"/>
+                                <text x="70" y="120" font-size="6.5" text-anchor="middle" font-family="Arial" font-weight="bold">CONVENTIONAL</text>
+                            </svg>
+                            <div class="rp-guarantee">GAURANTEE 60 MONTHS FROM THE DATE OF INSTALLATION AND 66 MONTHS FROM THE DATE OF SUPPLY</div>
+                        </div>
+
+                    </div>
+                    <!-- end rp-bottom-section -->
+
+                    <!-- Plate width indicator -->
+                    <div class="rp-width-bar">
+                        <div class="rp-width-line"></div>
+                        <span class="rp-width-num">105</span>
+                        <div class="rp-width-line"></div>
+                    </div>
+
+                </div>
+                <!-- end rp-plate -->
+                </div>
+                <!-- end ratingPlateExport -->
+
+                <!-- Export buttons -->
+                <div class="rp-export-bar">
+                    <button class="rp-export-btn" id="rpExportSvg" type="button">⬇ Export as SVG</button>
+                    <button class="rp-export-btn rp-export-pdf" id="rpExportPdf" type="button">⬇ Export as PDF</button>
+                </div>
+
+            </div>
+            <!-- end rp-page-wrap -->
+
+        </div>
+        <!-- end page-rating-plate -->
+
+    </main>
+</div>
+
+<script src="renderer.js"></script>
+</body>
+</html>
