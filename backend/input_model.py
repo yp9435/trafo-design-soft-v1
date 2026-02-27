@@ -33,11 +33,11 @@ class WindingInput(BaseModel):
     )
     
     axial_parallel: int = Field(
-        ...,
+        ..., ge=1, le=20,
         description="Number of Axial Parallel Conductors"
     )
     radial_parallel: int = Field(
-        ...,
+        ..., ge=1, le=20,
         description="Number of Radial Parallel Conductors"
     )
 

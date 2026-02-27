@@ -2,6 +2,8 @@ from input_model import TransformerDesignInput
 from modules.core_design import CoreDesign
 from modules.winding_design import WindingDesign
 from modules.final_core_design import FinalCoreDesign
+from modules.rating_plate import RatingPlateGenerator
+from modules.bom import BOMGenerator
 
 inputs = TransformerDesignInput(
     transformer_kva=60,
@@ -100,4 +102,23 @@ final_core_results = final_core.design()
 
 print("\n--- Final Core Design Output ---")
 for key, value in final_core_results.items():
+    print(f"{key}: {value}")
+    
+# Step 6: BOM Details
+
+bom_generator = BOMGenerator(
+    design_results=final_core_results,
+)
+bom_results = bom_generator.generate()
+print("\n--- BOM Output ---")
+for key, value in bom_results.items():
+    print(f"{key}: {value}")
+
+# Step 7: Rating Plate Details
+Rating_Plate_details = RatingPlateGenerator(
+    design_data   = inputs,
+)
+Rating_Plate_results = Rating_Plate_details.generate()
+print("\n--- Rating Plate Output ---")
+for key, value in Rating_Plate_results.items():
     print(f"{key}: {value}")
