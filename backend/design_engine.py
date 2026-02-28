@@ -62,5 +62,8 @@ class TransformerDesignEngine:
         
         # Step 7: Layout Design
         self.results["layout"] = LayoutDesigner(design_results=self.results).generate()
+        
+        # Step 8: Rating Plate Details
+        self.results["rating_plate"] = RatingPlateGenerator(design_results=self.results,input_data=self.inputs).generate()
 
         return self.results
