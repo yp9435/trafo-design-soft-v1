@@ -1,4 +1,3 @@
-# modules/bom.py 
 """
 Bill of Materials generator for dry transformers.
 
@@ -12,7 +11,7 @@ Market prices (INR/kg) sourced Feb 2026:
   - AMORPHOUS:      ₹350   (approx 3.5× CRGO; supplier/market estimates)
 """
 
-# Market price table  - need to update periodically with fresh quotes
+# Market price table  - need to update periodically with fresh quotes :(
 
 conductor_prices = {
     # code: (price_per_kg, source)
@@ -88,15 +87,13 @@ def line_item(weight_kg: float, material_code: str, price_per_kg: float, price_s
         "cost_inr":      round(weight_kg * price_per_kg, 2),
     }
 
-# BOMGenerator
-
 class BOMGenerator:
     """
     Generate a Bill of Materials from TransformerDesignEngine output.
 
     Args:
         design_results: dict produced by TransformerDesignEngine
-        input_data:     original TransformerDesignInput (Pydantic model or dict)
+        input_data:     original TransformerDesignInput
     """
 
     def __init__(self, design_results: dict, input_data):

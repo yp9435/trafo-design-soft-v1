@@ -1,10 +1,3 @@
-"""
-Layout Design Module for Dry Transformers.
-
-Derives all key dimensional measurements from TransformerDesignEngine output.
-Returns measurements organised by view: front, top (enclosure), and side.
-"""
-
 # Default clearance
 
 layout_default_clearances = {

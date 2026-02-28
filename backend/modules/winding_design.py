@@ -8,7 +8,6 @@ class WindingDesign:
         winding_inputs : winding-specific input object (lv1, lv2, or hv namespace)
         core_results   : dict output from CoreDesign.design()
         clearance_to_core : radial clearance from core to winding inner surface (mm)
-                           Typically: LV1=5, LV2=15-20, HV=20-30 depending on voltage
     """
 
     def __init__(self, winding_inputs, core_results, clearance_to_core):

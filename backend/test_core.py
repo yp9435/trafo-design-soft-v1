@@ -53,11 +53,11 @@ for key, value in core_results.items():
     print(f"{key}: {value}")
     
 
-# LV1  – sits directly on the core, small clearance
+# LV1
 lv1_design = WindingDesign(
     winding_inputs=inputs.lv1,
     core_results=core_results,
-    clearance_to_core=5          # mm, tight to core for low-voltage winding
+    clearance_to_core=5         
 )
 lv1_results = lv1_design.design()
 
@@ -65,8 +65,8 @@ print("\n--- LV1 Design Output ---")
 for key, value in lv1_results.items():
     print(f"{key}: {value}")
 
-# LV2  – sits outside LV1, needs gap + LV1 radial thickness
-lv2_clearance = lv1_results["radial_thickness"] + 10   # LV1 build + inter-winding gap
+# LV2 
+lv2_clearance = lv1_results["radial_thickness"] + 10  
 lv2_design = WindingDesign(
     winding_inputs=inputs.lv2,
     core_results=core_results,
@@ -78,7 +78,7 @@ print("\n--- LV2 Design Output ---")
 for key, value in lv2_results.items():
     print(f"{key}: {value}")
 
-# HV  – outermost, sits outside LV2
+# HV 
 hv_clearance = lv2_clearance + lv2_results["radial_thickness"] + 15
 hv_design = WindingDesign(
     winding_inputs=inputs.hv,

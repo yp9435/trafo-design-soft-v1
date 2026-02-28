@@ -13,7 +13,6 @@ class FinalCoreDesign:
         core_inputs     : namespace/object with fields:
                             .material    - 'CRGO' or 'CRNO'
                             .grade       - 'M4', 'M3', or '23ZDMH'
-                            .step_lap    - bool, True if step-lap construction
         lv1_results     : dict output from WindingDesign.design() for LV1
         lv2_results     : dict output from WindingDesign.design() for LV2
         hv_results      : dict output from WindingDesign.design() for HV

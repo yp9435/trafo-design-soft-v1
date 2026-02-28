@@ -5,7 +5,7 @@ class CoreDesign:
     Attributes:
         inputs: An instance of the Inputs class containing the necessary parameters for core design.
     Methods:
-        design: Calculates the volts per turn and core area based on the input parameters and returns them in a dictionary.
+        design: Calculates and returns them in a dictionary.
     """
     def __init__(self, inputs):
         self.inputs = inputs
