@@ -3,6 +3,7 @@ from modules.winding_design import WindingDesign
 from modules.final_core_design import FinalCoreDesign
 from modules.bom import BOMGenerator
 from modules.rating_plate import RatingPlateGenerator
+from modules.layout_design import LayoutDesigner
 
 class TransformerDesignEngine:
     def __init__(self, inputs):
@@ -59,19 +60,7 @@ class TransformerDesignEngine:
         # Step 6: BOM Details
         self.results["bom"] = BOMGenerator(design_results=self.results, input_data=self.inputs).generate()
         
-        """ Step 6: BOM Details
-        BOM_details = BOMGenerator(
-            design_data   = self.inputs,
-            rates = 4.5
-        )
-        BOM_results = BOM_details.generate()
-        self.results["bom_details"] = BOM_results
-        
-        # Step 7: Rating Plate Details
-        Rating_Plate_details = RatingPlateGenerator(
-            design_data   = self.inputs,
-        )
-        Rating_Plate_results = Rating_Plate_details.generate()
-        self.results["rating_plate_details"] = Rating_Plate_results"""
+        # Step 7: Layout Design
+        self.results["layout"] = LayoutDesigner(design_results=self.results).generate()
 
         return self.results

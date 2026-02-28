@@ -37,7 +37,7 @@ class FinalCoreDesign:
         net_core_area   = cr["net_core_area"]     
         
         tongue_width     = core_dimensions[0]     
-        center_distance  = core_dimensions[1]     # centre-to-centre limb distance (mm)
+        center_distance  = self.hv_results["winding_outer_dimensions"][1]     # centre-to-centre limb distance (mm)
 
         window_height = f.window_height(tongue_width)   # mm
 
