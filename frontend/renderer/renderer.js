@@ -3,17 +3,104 @@
    ============================================= */
 
 /* =============================================
+   SHARED UTILITIES  (single canonical set)
+   ============================================= */
+
+/* ── Rounding helpers ── */
+function r0(v) { return Math.round(+v); }
+function r1(v) { return (+v).toFixed(1); }
+function r2(v) { return (+v).toFixed(2); }
+function r3(v) { return (+v).toFixed(3); }
+function r4(v) { return (+v).toFixed(4); }
+
+/* ── DOM helpers ── */
+function setText(id, val) {
+    let el = document.getElementById(id);
+    if (el && val !== undefined && val !== null) el.textContent = val;
+}
+function setTextUpper(id, val) { if (val) setText(id, String(val).toUpperCase()); }
+function setTbody(id, html) { let el = document.getElementById(id); if (el) el.innerHTML = html; }
+
+/* ── Connection / material helpers (canonical) ── */
+function toConnName(v) {
+    if (v === "Y" || v === "Star")  return "Star";
+    if (v === "D" || v === "Delta") return "Delta";
+    return v || "—";
+}
+function toConnLabel(v) {
+    if (v === "Y" || v === "Star")  return "Star (Y)";
+    if (v === "D" || v === "Delta") return "Delta (D)";
+    return v || "-";
+}
+function toConnUpper(v) {
+    let n = toConnName(v);
+    return n === "Star" ? "STAR" : n === "Delta" ? "DELTA" : (v || "—");
+}
+function isCu(mat) { return mat === "Copper" || mat === "Cu" || mat === "CU"; }
+function matCode(mat) {
+    if (!mat) return "—";
+    let l = mat.toLowerCase();
+    return (l === "al" || l.indexOf("alum") !== -1) ? "AL" : "CU";
+}
+function phaseVoltage(lineV, conn) {
+    // Accepts both raw API values ("Y","D") and display values ("Star","Delta")
+    return (conn === "Y" || conn === "Star") ? lineV / Math.sqrt(3) : lineV;
+}
+function getBIL(volts) {
+    if (!volts || volts <= 0) return "—";
+    if (volts <= 1000)  return "—";
+    if (volts <= 3300)  return "40 kVp (IS 2026)";
+    if (volts <= 6600)  return "60 kVp";
+    if (volts <= 11000) return "95 kVp";
+    if (volts <= 22000) return "150 kVp";
+    return "250 kVp";
+}
+
+/* ── HTML row builders ── */
+function trRow(label, value) {
+    return '<tr><td class="col-param">' + label + '</td><td class="col-value">' + value + '</td></tr>';
+}
+function trRow4(l1, v1, l2, v2) {
+    return '<tr>' +
+        '<td class="col-param">' + l1 + '</td><td class="col-value">' + v1 + '</td>' +
+        '<td class="col-param">' + l2 + '</td><td class="col-value">' + v2 + '</td>' +
+        '</tr>';
+}
+function buildOutputRow(label, v1, v2, hv) {
+    return "<tr><th>" + label + "</th><td>" + v1 + "</td><td>" + v2 + "</td><td>" + hv + "</td></tr>";
+}
+function kvRow(label, value) {
+    return '<div class="kv-row"><span class="kv-label">' + label +
+           '</span><span class="kv-value">' + value + '</span></div>';
+}
+
+/* ── Generic tab initialiser (replaces two identical tab blocks) ── */
+function initTabs(tabSel, contentSel, attr, prefix) {
+    let tabs     = document.querySelectorAll(tabSel);
+    let contents = document.querySelectorAll(contentSel);
+    tabs.forEach(function(tab) {
+        tab.addEventListener("click", function() {
+            tabs.forEach(function(t)     { t.classList.remove("active"); });
+            contents.forEach(function(c) { c.classList.add("hidden"); });
+            tab.classList.add("active");
+            let el = document.getElementById(prefix + tab.getAttribute(attr));
+            if (el) el.classList.remove("hidden");
+        });
+    });
+}
+
+/* =============================================
    PAGE NAVIGATION
    ============================================= */
-var navItems = document.querySelectorAll(".nav-item");
-var pages    = document.querySelectorAll(".page");
+const navItems = document.querySelectorAll(".nav-item");
+const pages    = document.querySelectorAll(".page");
 
 function showPage(pageId) {
     pages.forEach(function(page) {
         page.classList.add("hidden");
     });
 
-    var target = document.getElementById("page-" + pageId);
+    let target = document.getElementById("page-" + pageId);
     if (target) {
         target.classList.remove("hidden");
     }
@@ -36,561 +123,1381 @@ navItems.forEach(function(item) {
 showPage("input");
 
 /* =============================================
-   TECHNICAL REPORT — TOP-LEVEL TABS
+   TECHNICAL REPORT — TABS (top-level & winding sub-tabs)
    ============================================= */
-var trTabs        = document.querySelectorAll(".tr-tab");
-var trTabContents = document.querySelectorAll(".tr-tab-content");
-
-trTabs.forEach(function(tab) {
-    tab.addEventListener("click", function() {
-        var target = tab.getAttribute("data-tr-tab");
-
-        trTabs.forEach(function(t) { t.classList.remove("active"); });
-        trTabContents.forEach(function(c) { c.classList.add("hidden"); });
-
-        tab.classList.add("active");
-
-        var content = document.getElementById("tr-" + target);
-        if (content) {
-            content.classList.remove("hidden");
-        }
-    });
-});
-
-/* =============================================
-   TECHNICAL REPORT — WINDING SUB-TABS
-   ============================================= */
-var windingSubTabs     = document.querySelectorAll(".winding-sub-tab");
-var windingSubContents = document.querySelectorAll(".winding-sub-content");
-
-windingSubTabs.forEach(function(tab) {
-    tab.addEventListener("click", function() {
-        var target = tab.getAttribute("data-winding-tab");
-
-        windingSubTabs.forEach(function(t) { t.classList.remove("active"); });
-        windingSubContents.forEach(function(c) { c.classList.add("hidden"); });
-
-        tab.classList.add("active");
-
-        var content = document.getElementById("winding-" + target);
-        if (content) {
-            content.classList.remove("hidden");
-        }
-    });
-});
+initTabs(".tr-tab",          ".tr-tab-content",      "data-tr-tab",      "tr-");
+initTabs(".winding-sub-tab", ".winding-sub-content", "data-winding-tab", "winding-");
 
 /* =============================================
    INPUT PAGE — RUN CALCULATION
    ============================================= */
-var transformerForm = document.getElementById("transformerForm");
+const transformerForm = document.getElementById("transformerForm");
 
-function runCalculation() {
-    var inputData = {
-        ratedPower    : parseFloat(document.getElementById("ratedPower").value)    || 0,
-        phases        : parseInt(document.getElementById("phases").value)           || 0,
-        fluxDensity   : parseFloat(document.getElementById("fluxDensity").value)   || 0,
-        frequency     : parseFloat(document.getElementById("frequency").value)     || 0,
-        lv1Voltage    : parseFloat(document.getElementById("lv1Voltage").value)    || 0,
-        lv2Voltage    : parseFloat(document.getElementById("lv2Voltage").value)    || 0,
-        hvVoltage     : parseFloat(document.getElementById("hvVoltage").value)     || 0,
-        lv1kva        : parseFloat(document.getElementById("lv1kva").value)        || 0,
-        lv2kva        : parseFloat(document.getElementById("lv2kva").value)        || 0,
-        hvkva         : parseFloat(document.getElementById("hvkva").value)         || 0,
-        lv1cd         : parseFloat(document.getElementById("lv1cd").value)         || 0,
-        lv2cd         : parseFloat(document.getElementById("lv2cd").value)         || 0,
-        hvcd          : parseFloat(document.getElementById("hvcd").value)          || 0,
-        lv1mat        : document.getElementById("lv1mat").value,
-        lv2mat        : document.getElementById("lv2mat").value,
-        hvmat         : document.getElementById("hvmat").value,
-        lv1conn       : document.getElementById("lv1conn").value,
-        lv2conn       : document.getElementById("lv2conn").value,
-        hvconn        : document.getElementById("hvconn").value,
-        vectorGroup   : document.getElementById("vectorGroup").value,
-        insulationClass: document.getElementById("insulationClass").value
+/* =============================================
+   API SERVICE LAYER
+   POST http://127.0.0.1:8000/design
+   ============================================= */
+const API_BASE = "http://127.0.0.1:8000";
+
+function buildApiPayload(inp) {
+    // Builds the exact JSON shape expected by TransformerDesignInput (input_model.py).
+    //
+    // IMPORTANT: The backend uses a FLAT structure (not nested lv1/lv2/hv objects)
+    // and expects full display strings, not short codes:
+    //   lv1_material: "Copper" | "Aluminium"   (NOT "CU" | "AL")
+    //   lv1_connection: "Star" | "Delta"        (NOT "Y"  | "D")
+    //
+    // Field names verified against the actual failing request JSON payload.
+    return {
+        // Transformer level
+        rated_power       : inp.ratedPower,
+        phases            : inp.phases,
+        flux_density      : inp.fluxDensity,
+        frequency         : inp.frequency,
+        vector_group      : inp.vectorGroup,
+        insulation_class  : inp.insulationClass,
+
+        // LV1 (flat, not nested)
+        lv1_voltage        : inp.lv1Voltage,
+        lv1_kva            : inp.lv1kva,
+        lv1_current_density: inp.lv1cd,
+        lv1_material       : inp.lv1matDisp,   // "Copper" | "Aluminium"
+        lv1_connection     : inp.lv1connDisp,  // "Star"   | "Delta"
+
+        // LV2 (flat)
+        lv2_voltage        : inp.lv2Voltage,
+        lv2_kva            : inp.lv2kva,
+        lv2_current_density: inp.lv2cd,
+        lv2_material       : inp.lv2matDisp,
+        lv2_connection     : inp.lv2connDisp,
+
+        // HV (flat)
+        hv_voltage         : inp.hvVoltage,
+        hv_kva             : inp.hvkva,
+        hv_current_density : inp.hvcd,
+        hv_material        : inp.hvmatDisp,
+        hv_connection      : inp.hvconnDisp,
+
+        // Core material
+        core_material_type : inp.coreMaterialType,   // "CRGO" | "CRNO"
+        core_grade         : inp.coreGrade           // "M4" | "M3" | "23ZDMH"
     };
+}
 
-    // Normalize short codes to full names used by engine & validation
-    function normMat(v)  { return (v === "AL") ? "Aluminium" : "Copper"; }
-    function normConn(v) { return (v === "Y")  ? "Star"      : "Delta";  }
-    inputData.lv1mat  = normMat(inputData.lv1mat);
-    inputData.lv2mat  = normMat(inputData.lv2mat);
-    inputData.hvmat   = normMat(inputData.hvmat);
-    inputData.lv1conn = normConn(inputData.lv1conn);
-    inputData.lv2conn = normConn(inputData.lv2conn);
-    inputData.hvconn  = normConn(inputData.hvconn);
-
-    var result;
-
-    if (window.api && typeof window.api.runCalculation === "function") {
-        result = window.api.runCalculation(inputData);
-    } else {
-        result = fallbackCalculation(inputData);
+function mapApiResponse(apiResp) {
+    // ── Mode A: already-shaped internal object — pass through ──────────
+    if (apiResp.windingSummary && apiResp.coreDesign && apiResp.performance) {
+        return apiResp;
     }
 
-    populateOutput(result);
+    // ── Mode B: map from design_engine result keys → internal shape ─────
+    //
+    //  Backend structure (from actual JSON response):
+    //    apiResp.core       → initial_volts_per_turn, phase_voltage, turns_per_phase,
+    //                         volts_per_turn, net_core_area, gross_core_area,
+    //                         core_dimensions[tongue, stack]
+    //    apiResp.lv1/lv2/hv → voltage_per_phase, current_per_phase, number_of_layers,
+    //                         turns_per_layer, total_conductor_cross_sectional_area,
+    //                         current_density_verification, window_height, end_clearance,
+    //                         winding_length, conductor_breadth, insulated_conductor_breadth,
+    //                         conductor_height, insulated_conductor_height,
+    //                         interlayer_insulation_thickness, radial_thickness,
+    //                         winding_inner_dimensions, winding_outer_dimensions,
+    //                         mean_length_of_turn, total_wire_length,
+    //                         resistance_per_phase_75C, bare_weight, insulated_weight,
+    //                         procurement_weight, stray_loss_percentage, load_loss,
+    //                         winding_temperature_gradient
+    //    apiResp.final_core  → tongue_width, center_distance, window_height, core_length,
+    //                         density, build_factor, specific_loss, core_weight, core_loss,
+    //                         tank_length, tank_width, tank_height,
+    //                         overall_length, overall_width, overall_height,
+    //                         lv1_bare_weight, lv2_bare_weight, hv_bare_weight,
+    //                         insulation_weight, active_part_weight
+    //    apiResp.layout      → front_view, side_view, top_view
+    //    apiResp.rating_plate → manufacturer, primary, secondary_1, secondary_2, ...
+    //    apiResp.bom         → windings, core, total_cost_inr, ...
 
-    var outputSection = document.getElementById("outputSection");
+    let c  = apiResp.core        || {};
+    let w1 = apiResp.lv1         || {};
+    let w2 = apiResp.lv2         || {};
+    let wh = apiResp.hv          || {};
+    let fc = apiResp.final_core  || {};
+    let ly = apiResp.layout      || {};
+    let rp = apiResp.rating_plate || {};
+    let bm = apiResp.bom         || {};
+
+    // core_dimensions is [tongue, stack]
+    let coreDims = c.core_dimensions || [0, 0];
+    let tongue   = coreDims[0] || 0;
+    let stack    = coreDims[1] || 0;
+
+    // layout sub-objects
+    let lyFront = ly.front_view || {};
+    let lySide  = ly.side_view  || {};
+    let lyTop   = ly.top_view   || {};
+
+    // winding_inner/outer_dimensions are [width, height] arrays
+    let lv1OD = w1.winding_outer_dimensions || [0, 0];
+    let lv2OD = w2.winding_outer_dimensions || [0, 0];
+    let hvOD  = wh.winding_outer_dimensions || [0, 0];
+
+    // Derived: yoke height = tongue_width (square core cross-section)
+    let yokeHeight = fc.tongue_width || tongue;
+
+    // Enclosure from layout.top_view (definitive source)
+    let encL = lyTop.enclosure_length_mm || fc.overall_length || fc.tank_length || 0;
+    let encW = lyTop.enclosure_width_mm  || fc.overall_width  || fc.tank_width  || 0;
+    let encH = lyTop.enclosure_height_mm || fc.overall_height || fc.tank_height || 0;
+
+    // Limb centre-to-centre from final_core
+    let limbSpacing = fc.center_distance || 0;
+
+    // Total load loss = sum of individual winding load losses
+    let totalLoadLoss = (w1.load_loss || 0) + (w2.load_loss || 0) + (wh.load_loss || 0);
+    let totalLoss     = totalLoadLoss + (fc.core_loss || 0);
+
+    return {
+        // ── Winding summary ─────────────────────────────────────────────
+        windingSummary: {
+            LV1: {
+                turns          : c.turns_per_phase                        || 0,
+                conductorArea  : w1.total_conductor_cross_sectional_area   || 0,
+                currentDensity : w1.current_density_verification           || 0,
+                copperLoss     : w1.load_loss                              || 0
+            },
+            LV2: {
+                turns          : Math.round((w2.voltage_per_phase || 0) / (c.volts_per_turn || 1)),
+                conductorArea  : w2.total_conductor_cross_sectional_area   || 0,
+                currentDensity : w2.current_density_verification           || 0,
+                copperLoss     : w2.load_loss                              || 0
+            },
+            HV: {
+                turns          : Math.round((wh.voltage_per_phase || 0) / (c.volts_per_turn || 1)),
+                conductorArea  : wh.total_conductor_cross_sectional_area   || 0,
+                currentDensity : wh.current_density_verification           || 0,
+                copperLoss     : wh.load_loss                              || 0
+            }
+        },
+
+        // ── Core design summary ─────────────────────────────────────────
+        coreDesign: {
+            netCoreArea  : c.net_core_area   || 0,   // mm²
+            grossCoreArea: c.gross_core_area  || 0,   // mm²
+            tongue       : tongue,
+            stack        : stack,
+            windowHeight : fc.window_height   || 0,   // mm
+            yokeHeight   : yokeHeight,                // mm
+            coreWeight   : fc.core_weight     || 0,   // kg
+            limbSpacing  : limbSpacing,               // mm
+            enc_L        : encL,
+            enc_W        : encW,
+            enc_H        : encH
+        },
+
+        // ── Performance ─────────────────────────────────────────────────
+        performance: {
+            coreLoss      : fc.core_loss      || 0,
+            totalLoadLoss : totalLoadLoss,
+            totalLoss     : totalLoss,
+            impedance     : rp.impedance_percentage ? parseFloat(rp.impedance_percentage) : 0,
+            regulation    : 0   // not in current backend response; extend when available
+        },
+
+        // ── Radial layout dims (visual diagram) ─────────────────────────
+        radialDims: {
+            coreDia : tongue,                          // tongue width used as core reference dim
+            lv1     : w1.radial_thickness || 0,
+            duct1   : (lv2OD[0] || 0) - (lv1OD[0] || 0) > 0
+                        ? ((lv2OD[0] || 0) - (lv1OD[0] || 0)) / 2
+                        : 5,
+            lv2     : w2.radial_thickness || 0,
+            duct2   : (hvOD[0] || 0) - (lv2OD[0] || 0) > 0
+                        ? ((hvOD[0] || 0) - (lv2OD[0] || 0)) / 2
+                        : 10,
+            hv      : wh.radial_thickness || 0
+        },
+
+        // ── Core material metadata ──────────────────────────────────────
+        coreMatMeta: {
+            type       : "CRGO Silicon Steel",           // extend when backend returns this
+            grade      : "M4",
+            thickness  : "0.27 mm",
+            density    : (fc.density || 7.65) + " g/cc",
+            stackFactor: 0.96,
+            specLoss   : fc.specific_loss  || 0,
+            buildFactor: fc.build_factor   || 1.3
+        },
+
+        // ── Rating plate (direct from backend, used by populateRatingPlate) ──
+        ratingPlate: rp,
+
+        // ── BOM (direct from backend) ────────────────────────────────────
+        bom: bm,
+
+        // ── Layout (direct from backend) ─────────────────────────────────
+        layout: ly,
+
+        // ── Flat steps — all detail fields for report/output tables ─────
+        steps: {
+            // Core
+            vt           : c.volts_per_turn   || 0,
+            A_net        : c.net_core_area     || 0,   // mm²
+            A_gross      : c.gross_core_area   || 0,   // mm²
+            tongue       : tongue,
+            stack        : stack,
+            windowHeight : fc.window_height    || 0,
+            yokeHeight   : yokeHeight,
+            limbSpacingA : limbSpacing,
+            coreLen_mm   : fc.core_length      || 0,
+            coreWeight   : fc.core_weight      || 0,
+            coreLoss     : fc.core_loss        || 0,
+            enc_L        : encL,
+            enc_W        : encW,
+            enc_H        : encH,
+
+            // Turns
+            lv1Turns  : c.turns_per_phase                                               || 0,
+            lv2Turns  : Math.round((w2.voltage_per_phase || 0) / (c.volts_per_turn || 1)),
+            hvTurns   : Math.round((wh.voltage_per_phase || 0) / (c.volts_per_turn || 1)),
+
+            // Layers & turns per layer
+            lv1TpL    : w1.turns_per_layer  || 0,
+            lv2TpL    : w2.turns_per_layer  || 0,
+            hvTpL     : wh.turns_per_layer  || 0,
+            lv1Layers : w1.number_of_layers || 0,
+            lv2Layers : w2.number_of_layers || 0,
+            hvLayers  : wh.number_of_layers || 0,
+
+            // Parallel conductors (not in current backend response — default 1)
+            lv1Np: 1, lv2Np: 1, hvNp: 1,
+            lv1Nr: 1, lv2Nr: 1, hvNr: 1,
+
+            // Phase currents
+            lv1CurPhase : w1.current_per_phase || 0,
+            lv2CurPhase : w2.current_per_phase || 0,
+            hvCurPhase  : wh.current_per_phase || 0,
+
+            // Conductor dimensions
+            lv1_b  : w1.conductor_breadth           || 0,
+            lv1_bi : w1.insulated_conductor_breadth  || 0,
+            lv1_h  : w1.conductor_height            || 0,
+            lv1_hi : w1.insulated_conductor_height   || 0,
+            lv2_b  : w2.conductor_breadth           || 0,
+            lv2_bi : w2.insulated_conductor_breadth  || 0,
+            lv2_h  : w2.conductor_height            || 0,
+            lv2_hi : w2.insulated_conductor_height   || 0,
+            hv_b   : wh.conductor_breadth           || 0,
+            hv_bi  : wh.insulated_conductor_breadth  || 0,
+            hv_h   : wh.conductor_height            || 0,
+            hv_hi  : wh.insulated_conductor_height   || 0,
+
+            // Conductor area & actual current density
+            lv1_csActual : w1.total_conductor_cross_sectional_area || 0,
+            lv2_csActual : w2.total_conductor_cross_sectional_area || 0,
+            hv_csActual  : wh.total_conductor_cross_sectional_area || 0,
+            lv1_cd       : w1.current_density_verification || 0,
+            lv2_cd       : w2.current_density_verification || 0,
+            hv_cd        : wh.current_density_verification || 0,
+
+            // Radial thickness
+            lv1_radThick : w1.radial_thickness || 0,
+            lv2_radThick : w2.radial_thickness || 0,
+            hv_radThick  : wh.radial_thickness || 0,
+
+            // Interlayer insulation
+            lv1_interLayerIns : w1.interlayer_insulation_thickness || 0,
+            lv2_interLayerIns : w2.interlayer_insulation_thickness || 0,
+            hv_interLayerIns  : wh.interlayer_insulation_thickness || 0,
+
+            // LMT & wire length
+            lmt_lv1    : w1.mean_length_of_turn || 0,
+            lmt_lv2    : w2.mean_length_of_turn || 0,
+            lmt_hv     : wh.mean_length_of_turn || 0,
+            wireLen_lv1: w1.total_wire_length   || 0,
+            wireLen_lv2: w2.total_wire_length   || 0,
+            wireLen_hv : wh.total_wire_length   || 0,
+
+            // Resistance
+            R75_lv1 : w1.resistance_per_phase_75C || 0,
+            R75_lv2 : w2.resistance_per_phase_75C || 0,
+            R75_hv  : wh.resistance_per_phase_75C || 0,
+
+            // Weights
+            bareWt_lv1  : w1.bare_weight         || 0,
+            bareWt_lv2  : w2.bare_weight         || 0,
+            bareWt_hv   : wh.bare_weight         || 0,
+            insWt_lv1   : w1.insulated_weight    || 0,
+            insWt_lv2   : w2.insulated_weight    || 0,
+            insWt_hv    : wh.insulated_weight    || 0,
+            procWt_lv1  : w1.procurement_weight  || 0,
+            procWt_lv2  : w2.procurement_weight  || 0,
+            procWt_hv   : wh.procurement_weight  || 0,
+
+            // Stray loss & temperature gradient (computed by backend)
+            strayPct_lv1 : w1.stray_loss_percentage    || 0,
+            strayPct_lv2 : w2.stray_loss_percentage    || 0,
+            strayPct_hv  : wh.stray_loss_percentage    || 0,
+            gradient_lv1 : w1.winding_temperature_gradient || 0,
+            gradient_lv2 : w2.winding_temperature_gradient || 0,
+            gradient_hv  : wh.winding_temperature_gradient || 0,
+
+            // Losses
+            ll_lv1       : w1.load_loss        || 0,
+            ll_lv2       : w2.load_loss        || 0,
+            ll_hv        : wh.load_loss        || 0,
+            totalLoadLoss: totalLoadLoss,
+            totalLoss    : totalLoss,
+
+            // Window details (from lv1 as reference — all windings share the same window)
+            windingLength : w1.winding_length || 0,
+            endClearance  : w1.end_clearance  || 0
+        }
+    };
+}
+
+function showLoadingState(isLoading) {
+    let btn = document.getElementById("runCalcBtn");
+    let spinner = document.getElementById("calcSpinner");
+    if (btn) {
+        btn.disabled = isLoading;
+        btn.style.opacity = isLoading ? "0.7" : "1";
+        btn.textContent = isLoading ? "CALCULATING..." : "RUN CALCULATION";
+    }
+    if (spinner) spinner.style.display = isLoading ? "block" : "none";
+}
+
+function showApiError(message) {
+    let panel = document.getElementById("validationSummary");
+    if (panel) {
+        panel.innerHTML = '<div class="val-sum-err">⚠ API Error: ' + message + '</div>';
+        panel.className = "val-summary-panel val-summary-dirty";
+        panel.scrollIntoView({ behavior: "smooth" });
+    }
+}
+
+/* ── Main API call ─────────────────────────────────────────────── */
+function callDesignApi(inputData, onSuccess, onError) {
+    let payload = buildApiPayload(inputData);
+
+    fetch(API_BASE + "/design", {
+        method  : "POST",
+        headers : { "Content-Type": "application/json" },
+        body    : JSON.stringify(payload)
+    })
+    .then(function(response) {
+        if (!response.ok) {
+            return response.text().then(function(text) {
+                let msg;
+                try { msg = JSON.parse(text).detail || JSON.parse(text).message || text; }
+                catch(e) { msg = text || ("HTTP " + response.status); }
+                throw new Error(msg);
+            });
+        }
+        return response.json();
+    })
+    .then(function(apiResp) {
+        let mapped = mapApiResponse(apiResp);
+        onSuccess(mapped);
+    })
+    .catch(function(err) {
+        onError(err.message || "Could not reach backend. Is it running on 127.0.0.1:8000?");
+    });
+}
+
+/* =============================================
+   INPUT COLLECTION  (single normalised point)
+   ============================================= */
+function collectInputs() {
+    function num(id)  { return parseFloat(document.getElementById(id).value) || 0; }
+    function int_(id) { return parseInt(document.getElementById(id).value)   || 1; }
+    function sel(id)  { let el = document.getElementById(id); return el ? el.value : ""; }
+
+    // Raw values — match backend Literal["CU","AL"] and Literal["D","Y"]
+    let lv1matRaw  = sel("lv1mat");   // "CU" or "AL"
+    let lv2matRaw  = sel("lv2mat");
+    let hvmatRaw   = sel("hvmat");
+    let lv1connRaw = sel("lv1conn");  // "Y" or "D"
+    let lv2connRaw = sel("lv2conn");
+    let hvconnRaw  = sel("hvconn");
+
+    // Display-normalised values — used only by UI / PDF rendering
+    let lv1matDisp  = lv1matRaw === "AL" ? "Aluminium" : "Copper";
+    let lv2matDisp  = lv2matRaw === "AL" ? "Aluminium" : "Copper";
+    let hvmatDisp   = hvmatRaw  === "AL" ? "Aluminium" : "Copper";
+    let lv1connDisp = toConnName(lv1connRaw);   // "Star" or "Delta"
+    let lv2connDisp = toConnName(lv2connRaw);
+    let hvconnDisp  = toConnName(hvconnRaw);
+
+    // k_value: kept in sync with ratedPower for API
+    let ratedPower  = num("ratedPower");
+    let kValue      = ratedPower <= 25 ? 0.45 : ratedPower <= 100 ? 0.55 : 0.62;
+    // Allow manual override if input exists
+    let kEl = document.getElementById("kValue");
+    if (kEl && parseFloat(kEl.value)) kValue = parseFloat(kEl.value);
+
+    // coreMaterialType from HTML select: "CRGO" | "CRNO" (backend Literal)
+    let coreMaterialRaw = sel("coreMaterialType") || "CRGO";
+    // Map legacy "Amorphous" value if used in HTML to CRNO (closest backend Literal)
+    if (coreMaterialRaw === "Amorphous") coreMaterialRaw = "CRNO";
+
+    return {
+        // ── Transformer-level ──────────────────────────────────────────
+        ratedPower      : ratedPower,
+        fluxDensity     : num("fluxDensity"),
+        frequency       : num("frequency"),
+        kValue          : kValue,
+        vectorGroup     : sel("vectorGroup"),
+        insulationClass : sel("insulationClass"),
+        phases          : parseInt(sel("phases")) || 3,
+
+        // ── Voltages & kVA ────────────────────────────────────────────
+        lv1Voltage  : num("lv1Voltage"),
+        lv2Voltage  : num("lv2Voltage"),
+        hvVoltage   : num("hvVoltage"),
+        lv1kva      : num("lv1kva"),
+        lv2kva      : num("lv2kva"),
+        hvkva       : num("hvkva"),
+
+        // ── Current density ────────────────────────────────────────────
+        lv1cd : num("lv1cd"),
+        lv2cd : num("lv2cd"),
+        hvcd  : num("hvcd"),
+
+        // ── Raw (API-safe) values ───────────────────────────────────────
+        lv1mat  : lv1matRaw,   lv2mat  : lv2matRaw,   hvmat  : hvmatRaw,
+        lv1conn : lv1connRaw,  lv2conn : lv2connRaw,  hvconn : hvconnRaw,
+
+        // ── Display values (UI / PDF only) ──────────────────────────────
+        lv1matDisp  : lv1matDisp,   lv2matDisp  : lv2matDisp,   hvmatDisp  : hvmatDisp,
+        lv1connDisp : lv1connDisp,  lv2connDisp : lv2connDisp,  hvconnDisp : hvconnDisp,
+
+        // ── Parallel conductors ─────────────────────────────────────────
+        lv1axPar  : int_("lv1axPar"),  lv2axPar  : int_("lv2axPar"),  hvaxPar  : int_("hvaxPar"),
+        lv1radPar : int_("lv1radPar"), lv2radPar : int_("lv2radPar"), hvradPar : int_("hvradPar"),
+
+        // ── Core material ───────────────────────────────────────────────
+        coreMaterialType : coreMaterialRaw,
+        coreGrade        : sel("coreGrade") || "M4"
+    };
+}
+
+/* =============================================
+   RUN CALCULATION (async, API-first)
+   ============================================= */
+function runCalculation() {
+    let inputData = collectInputs();
+    showLoadingState(true);
+
+    callDesignApi(
+        inputData,
+        // ── SUCCESS ──────────────────────────────────────────────────────
+        function(result) {
+            showLoadingState(false);
+            onCalculationComplete(inputData, result);
+        },
+        // ── ERROR: show message, do NOT fall back to local calculation ──
+        function(errMsg) {
+            showLoadingState(false);
+            showApiError(errMsg);
+        }
+    );
+}
+
+function onCalculationComplete(inputData, result) {
+    _lastInputData  = inputData;
+    _lastResultData = result;
+
+    populateOutput(result);
+    populateTechnicalReport(inputData, result);
+    populateBom(result);
+    populateRatingPlate(inputData, result);
+
+    let outputSection = document.getElementById("outputSection");
     if (outputSection) {
         outputSection.classList.remove("hidden");
         outputSection.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
-    // Update Layout Design diagrams with real values
     updateLayoutDimensions(result);
 
-    // Update BOM rating label
-    updateBomRating(inputData.ratedPower);
-
-    // Update layout rating label
-    var ldLabel = document.getElementById("ldRatingLabel");
+    let ldLabel = document.getElementById("ldRatingLabel");
     if (ldLabel && inputData.ratedPower) ldLabel.textContent = inputData.ratedPower + " kVA Transformer";
+}
+
+/* =============================================
+   TECHNICAL REPORT — populate all tables from calculation
+   ============================================= */
+function populateTechnicalReport(inp, result) {
+    let s  = result.steps;
+    let cd = result.coreDesign;
+    let pf = result.performance;
+    let cm = result.coreMatMeta;
+    let w  = result.windingSummary;
+
+    // End clearance & winding length come from the backend — no recalculation
+    let endClr     = s.endClearance  || 0;
+    let netWindLen = s.windingLength  || 0;
+
+    // ════════════════════════════════════════════════════════════
+    //  SECTION 1: CORE DESIGN  (coreDesignBody)
+    // ════════════════════════════════════════════════════════════
+    let coreHtml =
+        trRow("Volts per Turn",              r4(s.vt)          + " V") +
+        trRow("LV1 Turns per Phase",         s.lv1Turns        + " turns") +
+        trRow("Revised Volts per Turn",      r4(s.vt)          + " V") +
+        trRow("Net Core Flux Density",       r2(inp.fluxDensity) + " T") +
+        trRow("Net Core Area",               r0(s.A_net)       + " mm²") +
+        trRow("Gross Core Area",             r0(s.A_gross)     + " mm²") +
+        trRow("Core Frame (Tongue × Stack)", s.tongue          + " × " + s.stack + " mm") +
+        trRow("Window Height",               r0(s.windowHeight) + " mm") +
+        trRow("Yoke Height",                 r0(s.yokeHeight)  + " mm") +
+        trRow("End Clearance",               r0(endClr)        + " mm") +
+        trRow("Net Winding Length",          r0(netWindLen)    + " mm") +
+        trRow("Limb Spacing (c-c)",          s.limbSpacingA    + " mm") +
+        trRow("Core Length",                 r0(s.coreLen_mm)  + " mm") +
+        trRow("Core Weight",                 r1(s.coreWeight)  + " kg") +
+        trRow("Core Loss",                   r0(s.coreLoss)    + " W") +
+        trRow("Enclosure (L × W × H)",       s.enc_L + " × " + s.enc_W + " × " + s.enc_H + " mm");
+    setTbody("coreDesignBody", coreHtml);
+
+    // ════════════════════════════════════════════════════════════
+    //  CROSS CONDUCTOR AREA TABLE  (conductorBreakdownBody)
+    // ════════════════════════════════════════════════════════════
+    let cbHtml =
+        trRow4("Window Height",           r0(s.windowHeight) + " mm",
+               "LV1 Conductor b (bare)",  r2(s.lv1_b)   + " mm") +
+        trRow4("End Clearance",           r0(endClr)  + " mm",
+               "LV1 Conductor b (ins.)",  r2(s.lv1_bi) + " mm") +
+        trRow4("Net Winding Length",      r0(netWindLen) + " mm",
+               "LV1 Conductor h (bare)",  r2(s.lv1_h)  + " mm") +
+        trRow4("Winding Length (eff.)",   r0(netWindLen) + " mm",
+               "LV1 Conductor h (ins.)",  r2(s.lv1_hi) + " mm") +
+        trRow4("Total Parallel (LV1)",    s.lv1Np * s.lv1Nr,
+               "LV1 Conductor Area",      r2(s.lv1_csActual) + " mm²") +
+        trRow4("Total Parallel (LV2)",    s.lv2Np * s.lv2Nr,
+               "LV2 Conductor Area",      r2(s.lv2_csActual) + " mm²") +
+        trRow4("Total Parallel (HV)",     s.hvNp * s.hvNr,
+               "HV Conductor Area",       r2(s.hv_csActual)  + " mm²");
+    setTbody("conductorBreakdownBody", cbHtml);
+
+    // Phase voltage labels (display only — no arithmetic, just label format)
+    let lv1PhaseVLabel = (inp.lv1conn === "Y") ? inp.lv1Voltage + " / √3 V" : inp.lv1Voltage + " V";
+    let lv2PhaseVLabel = (inp.lv2conn === "Y") ? inp.lv2Voltage + " / √3 V" : inp.lv2Voltage + " V";
+    let hvPhaseVLabel  = (inp.hvconn  === "Y") ? inp.hvVoltage  + " / √3 V" : inp.hvVoltage  + " V";
+
+    // ── Winding detail body builder — all values from backend ─────────
+    function windingBodyHtml(wnd) {
+        return trRow("Voltage per Phase",                   wnd.phaseVLabel) +
+               trRow("Current per Phase",                   r2(wnd.curPhase)   + " A") +
+               trRow("Turns per Phase",                     wnd.turns          + " turns") +
+               trRow("Connection",                          toConnName(wnd.conn)) +
+               trRow("Conductor Material",                  wnd.mat.toUpperCase()) +
+               trRow("Number of Layers",                    wnd.layers) +
+               trRow("Turns per Layer",                     wnd.tpL) +
+               trRow("Axial Parallel (Np)",                 wnd.np) +
+               trRow("Radial Parallel (Nr)",                wnd.nr) +
+               trRow("Total Parallel Conductors (Np × Nr)", wnd.np * wnd.nr) +
+               trRow("Conductor Breadth (bare / ins.)",     r2(wnd.b)  + " mm  &  " + r2(wnd.bi)  + " mm") +
+               trRow("Conductor Height (bare / ins.)",      r2(wnd.h)  + " mm  &  " + r2(wnd.hi)  + " mm") +
+               trRow("Net Conductor Area",                  r2(wnd.csActual) + " mm²") +
+               trRow("Current Density (actual)",            r2(wnd.cd)       + " A/mm²") +
+               trRow("Inter-Layer Insulation",              r2(wnd.interLayerIns) + " mm") +
+               trRow("Radial Build (winding thickness)",    r2(wnd.radThick) + " mm") +
+               trRow("Mean Turn Length (LMT)",              r3(wnd.lmt)      + " m") +
+               trRow("Total Wire Length",                   r1(wnd.wl)       + " m") +
+               trRow("Resistance per Phase @ 75°C",         r4(wnd.R75)      + " Ω") +
+               trRow("Bare / Insulated / Procurement Wt.",  r1(wnd.bareWt)   + " / " + r1(wnd.insWt) + " / " + r1(wnd.procWt) + " kg") +
+               trRow("Stray Loss (%)",                      r3(wnd.strayPct) + " %") +
+               trRow("Load Loss (I²R + Stray)",             r0(wnd.loadLoss) + " W") +
+               trRow("Winding Temperature Gradient",        r1(wnd.gradient) + " °C");
+    }
+
+    setTbody("windingLV1Body", windingBodyHtml({
+        phaseVLabel: lv1PhaseVLabel,  curPhase: s.lv1CurPhase,  turns: s.lv1Turns,
+        conn: inp.lv1conn,  mat: inp.lv1mat,
+        layers: s.lv1Layers,  tpL: s.lv1TpL,  np: s.lv1Np,  nr: s.lv1Nr,
+        b: s.lv1_b,  bi: s.lv1_bi,  h: s.lv1_h,  hi: s.lv1_hi,
+        csActual: s.lv1_csActual,  cd: s.lv1_cd,  interLayerIns: s.lv1_interLayerIns,
+        radThick: s.lv1_radThick,  lmt: s.lmt_lv1,  wl: s.wireLen_lv1,  R75: s.R75_lv1,
+        bareWt: s.bareWt_lv1,  insWt: s.insWt_lv1,  procWt: s.procWt_lv1,
+        strayPct: s.strayPct_lv1,  loadLoss: s.ll_lv1,  gradient: s.gradient_lv1
+    }));
+
+    setTbody("windingLV2Body", windingBodyHtml({
+        phaseVLabel: lv2PhaseVLabel,  curPhase: s.lv2CurPhase,  turns: s.lv2Turns,
+        conn: inp.lv2conn,  mat: inp.lv2mat,
+        layers: s.lv2Layers,  tpL: s.lv2TpL,  np: s.lv2Np,  nr: s.lv2Nr,
+        b: s.lv2_b,  bi: s.lv2_bi,  h: s.lv2_h,  hi: s.lv2_hi,
+        csActual: s.lv2_csActual,  cd: s.lv2_cd,  interLayerIns: s.lv2_interLayerIns,
+        radThick: s.lv2_radThick,  lmt: s.lmt_lv2,  wl: s.wireLen_lv2,  R75: s.R75_lv2,
+        bareWt: s.bareWt_lv2,  insWt: s.insWt_lv2,  procWt: s.procWt_lv2,
+        strayPct: s.strayPct_lv2,  loadLoss: s.ll_lv2,  gradient: s.gradient_lv2
+    }));
+
+    setTbody("windingHVBody", windingBodyHtml({
+        phaseVLabel: hvPhaseVLabel,  curPhase: s.hvCurPhase,  turns: s.hvTurns,
+        conn: inp.hvconn,  mat: inp.hvmat,
+        layers: s.hvLayers,  tpL: s.hvTpL,  np: s.hvNp,  nr: s.hvNr,
+        b: s.hv_b,  bi: s.hv_bi,  h: s.hv_h,  hi: s.hv_hi,
+        csActual: s.hv_csActual,  cd: s.hv_cd,  interLayerIns: s.hv_interLayerIns,
+        radThick: s.hv_radThick,  lmt: s.lmt_hv,  wl: s.wireLen_hv,  R75: s.R75_hv,
+        bareWt: s.bareWt_hv,  insWt: s.insWt_hv,  procWt: s.procWt_hv,
+        strayPct: s.strayPct_hv,  loadLoss: s.ll_hv,  gradient: s.gradient_hv
+    }));
+}
+
+/* =============================================
+   RATING PLATE — populate from calculation
+   ============================================= */
+function populateRatingPlate(inp, result) {
+    // All rating plate data comes from the backend's rating_plate object.
+    // Frontend only provides static company/address/sl.no from the settings panel.
+    let rp = result.ratingPlate || {};
+    let s  = result.steps;
+    let pf = result.performance;
+    let cm = result.coreMatMeta;
+
+    // ── Title line ────────────────────────────────────────────────────────
+    let phases = inp.phases === 1 ? "1 PHASE" : "3 PHASE";
+    setText("rp-bv-title",  phases + " " + matCode(inp.lv1mat) + " WOUND DRY TYPE ISOLATION TRANSFORMER");
+    setText("rp-bv-spec",   "IS 1180 : 2014 PART 1  ·  VECTOR GROUP: " + (rp.vector_symbol || inp.vectorGroup || "—").toUpperCase());
+    setText("rp-bv-rating", rp.rating_kva  || (inp.ratedPower + " KVA"));
+    setText("rp-bv-freq",   rp.frequency_hz || ((inp.frequency || 50) + " HZ"));
+    setText("rp-bv-imp",    rp.impedance_percentage || "—");
+
+    // ── Primary / secondary displays — use backend strings directly ───────
+    let primary = rp.primary    || {};
+    let sec1    = rp.secondary_1 || {};
+    let sec2    = rp.secondary_2 || {};
+
+    setText("rp-bv-primary", primary.display || "—");
+    setText("rp-bv-sec1",    sec1.display    || "—");
+    setText("rp-bv-sec2",    sec2.display    || "—");
+    setText("rp-bv-vector",  (rp.vector_symbol || inp.vectorGroup || "—").toUpperCase());
+
+    // ── Weight, insulation class ─────────────────────────────────────────
+    setText("rp-bv-weight", rp.weight || "—");
+    setText("rp-bv-insul",  "CLASS " + (inp.insulationClass || "—").toUpperCase());
+
+    // ── Losses ───────────────────────────────────────────────────────────
+    setText("rp-bv-noload",   (pf && pf.coreLoss      ? r0(pf.coreLoss)      : "—") + " W");
+    setText("rp-bv-fullload", (pf && pf.totalLoadLoss ? r0(pf.totalLoadLoss) : "—") + " W");
+
+    // ── Core material ────────────────────────────────────────────────────
+    if (cm) setText("rp-bv-coremat", cm.type + " · Grade " + cm.grade);
+
+    // ── Phasor title ─────────────────────────────────────────────────────
+    setText("rp-bv-phasor-title", (rp.vector_symbol || inp.vectorGroup || "Dyn11").toUpperCase());
+
+    // ── Mfg year — use backend value, fall back to current year ──────────
+    let mfgEl = document.getElementById("rp-bv-mfg");
+    if (mfgEl) {
+        if (rp.mfg_year) {
+            mfgEl.textContent = rp.mfg_year;
+        } else if (!mfgEl.textContent || mfgEl.textContent === "—") {
+            mfgEl.textContent = new Date().getFullYear();
+        }
+    }
+}
+
+/* ── Live settings updater (company name, address, etc.) ── */
+function updateRPSettings() {
+    function val(id) {
+        let el = document.getElementById(id);
+        return el ? el.value.trim() : "";
+    }
+
+    let company = val("rp-set-company");
+    let addr1   = val("rp-set-addr1");
+    let addr2   = val("rp-set-addr2");
+    let logo    = val("rp-set-logo");
+    let slno    = val("rp-set-slno");
+    let mfg     = val("rp-set-mfg");
+
+    if (company) setTextUpper("rp-bv-company-name",  company);
+    if (addr1)   setTextUpper("rp-bv-company-addr1", addr1);
+    if (addr2)   setTextUpper("rp-bv-company-addr2", addr2);
+    if (logo)    setTextUpper("rp-bv-logo-label",    logo);
+    if (slno)    setText("rp-bv-slno", slno);
+    if (mfg)     setText("rp-bv-mfg",  mfg);
 }
 
 /* =============================================
    POPULATE CALCULATED OUTPUTS
    ============================================= */
 function populateOutput(data) {
-    var w  = data.windingSummary;
-    var cd = data.coreDesign;
-    var pf = data.performance;
-    var s  = data.steps;
+    let w  = data.windingSummary;
+    let cd = data.coreDesign;
+    let pf = data.performance;
+    let s  = data.steps;
 
     /* ---- Winding Summary table ---- */
-    var tbody = document.getElementById("windingOutputBody");
+    let tbody = document.getElementById("windingOutputBody");
     if (tbody) {
         tbody.innerHTML =
             buildOutputRow("Turns / Phase",          w.LV1.turns,           w.LV2.turns,           w.HV.turns) +
             buildOutputRow("Turns / Layer",          s.lv1TpL,              s.lv2TpL,              s.hvTpL) +
             buildOutputRow("No. of Layers",          s.lv1Layers,           s.lv2Layers,           s.hvLayers) +
+            buildOutputRow("Axial Parallel (Np)",    s.lv1Np,               s.lv2Np,               s.hvNp) +
+            buildOutputRow("Radial Parallel (Nr)",   s.lv1Nr,               s.lv2Nr,               s.hvNr) +
             buildOutputRow("Current / Phase (A)",    r2(s.lv1CurPhase),     r2(s.lv2CurPhase),     r2(s.hvCurPhase)) +
             buildOutputRow("Conductor b (mm)",       r2(s.lv1_b),           r2(s.lv2_b),           r2(s.hv_b)) +
             buildOutputRow("Conductor h (mm)",       r2(s.lv1_h),           r2(s.lv2_h),           r2(s.hv_h)) +
-            buildOutputRow("Conductor Area (mm²)",   w.LV1.conductorArea,   w.LV2.conductorArea,   w.HV.conductorArea) +
-            buildOutputRow("Current Density (A/mm²)",w.LV1.currentDensity,  w.LV2.currentDensity,  w.HV.currentDensity) +
+            buildOutputRow("Conductor Area (mm²)",   r2(w.LV1.conductorArea), r2(w.LV2.conductorArea), r2(w.HV.conductorArea)) +
+            buildOutputRow("Current Density (A/mm²)",r2(w.LV1.currentDensity), r2(w.LV2.currentDensity), r2(w.HV.currentDensity)) +
             buildOutputRow("Radial Thickness (mm)",  r2(s.lv1_radThick),    r2(s.lv2_radThick),    r2(s.hv_radThick)) +
             buildOutputRow("LMT (m)",                r3(s.lmt_lv1),         r3(s.lmt_lv2),         r3(s.lmt_hv)) +
             buildOutputRow("Wire Length (m)",        r1(s.wireLen_lv1),     r1(s.wireLen_lv2),     r1(s.wireLen_hv)) +
             buildOutputRow("R @ 75°C (Ω)",           r4(s.R75_lv1),         r4(s.R75_lv2),         r4(s.R75_hv)) +
             buildOutputRow("Bare Weight (kg)",       r1(s.bareWt_lv1),      r1(s.bareWt_lv2),      r1(s.bareWt_hv)) +
-            buildOutputRow("Load Loss (W)",          w.LV1.copperLoss,      w.LV2.copperLoss,      w.HV.copperLoss);
+            buildOutputRow("Load Loss (W)",          r0(s.ll_lv1),          r0(s.ll_lv2),          r0(s.ll_hv));
     }
 
     /* ---- Core Design ---- */
-    var coreEl = document.getElementById("coreOutput");
+    let coreEl = document.getElementById("coreOutput");
     if (coreEl) {
         coreEl.innerHTML =
-            kvRow("Volts / Turn",          r3(s.vt) + " V") +
-            kvRow("Net Core Area",         r0(s.A_net) + " mm²  (" + r4(cd.netCoreArea) + " m²)") +
-            kvRow("Gross Core Area",       r0(s.A_gross) + " mm²") +
-            kvRow("Core Frame (Tongue × Stack)", s.tongue + " × " + s.stack + " mm") +
-            kvRow("Core Diameter",         r1(cd.coreDiameter * 1000) + " mm") +
-            kvRow("Window Height",         r0(s.windowHeight) + " mm") +
-            kvRow("Yoke Height",           r0(s.yokeHeight) + " mm") +
-            kvRow("Limb Spacing (c-c)",    s.limbSpacingA + " mm") +
-            kvRow("Core Length",           r0(s.coreLen_mm) + " mm") +
-            kvRow("Core Weight",           r1(s.coreWeight) + " kg") +
-            kvRow("Enclosure L × W × H",  s.enc_L + " × " + s.enc_W + " × " + s.enc_H + " mm");
+            kvRow("Volts / Turn",               r4(s.vt)          + " V") +
+            kvRow("Net Core Area",              r0(s.A_net)       + " mm²") +
+            kvRow("Gross Core Area",            r0(s.A_gross)     + " mm²") +
+            kvRow("Core Frame (Tongue × Stack)", s.tongue          + " × " + s.stack + " mm") +
+            kvRow("Window Height",              r0(s.windowHeight) + " mm") +
+            kvRow("Yoke Height",                r0(s.yokeHeight)  + " mm") +
+            kvRow("Limb Spacing (c-c)",         s.limbSpacingA    + " mm") +
+            kvRow("Core Length",                r0(s.coreLen_mm)  + " mm") +
+            kvRow("Core Weight",                r1(s.coreWeight)  + " kg") +
+            kvRow("Enclosure L × W × H",        s.enc_L + " × " + s.enc_W + " × " + s.enc_H + " mm");
     }
 
     /* ---- Performance ---- */
-    var perfEl = document.getElementById("performanceOutput");
+    let perfEl = document.getElementById("performanceOutput");
     if (perfEl) {
         perfEl.innerHTML =
-            kvRow("Core Loss",            pf.coreLoss      + " W") +
-            kvRow("Total Load Loss",      pf.totalLoadLoss + " W") +
-            kvRow("Total Loss",           pf.totalLoss     + " W") +
-            kvRow("Impedance Voltage",    pf.impedance     + " %") +
-            kvRow("Voltage Regulation",   pf.regulation    + " %");
+            kvRow("Core Loss",        r0(pf.coreLoss)       + " W") +
+            kvRow("Total Load Loss",  r0(pf.totalLoadLoss)  + " W") +
+            kvRow("Total Loss",       r0(pf.totalLoss)      + " W") +
+            kvRow("Impedance Voltage", pf.impedance          + " %") +
+            kvRow("Voltage Regulation", pf.regulation        + " %");
     }
 
-    /* Also update radial dims on layout page */
+    /* ---- Core Material Summary ---- */
+    let cmEl = document.getElementById("coreMaterialOutput");
+    if (cmEl && data.coreMatMeta) {
+        let cm = data.coreMatMeta;
+        cmEl.innerHTML =
+            kvRow("Material Type",        cm.type) +
+            kvRow("Grade / Standard",     cm.grade) +
+            kvRow("Sheet Thickness",      cm.thickness) +
+            kvRow("Density",              cm.density) +
+            kvRow("Stack Factor",         cm.stackFactor) +
+            kvRow("Specific Loss (W/kg)", r3(cm.specLoss)   + " W/kg") +
+            kvRow("Build Factor",         cm.buildFactor) +
+            kvRow("Core Weight",          r1(s.coreWeight)  + " kg") +
+            kvRow("Core Loss",            r0(s.coreLoss)    + " W") +
+            kvRow("Formula",              cm.type + " · " + r1(s.coreWeight) + " kg × " + r3(cm.specLoss) + " W/kg × " + cm.buildFactor);
+    }
+
+    /* ---- Update radial dims for layout diagram ---- */
     if (data.radialDims) {
-        var rd = data.radialDims;
-        ldDims.coreDia    = rd.coreDia;
-        ldDims.lv1Radial  = rd.lv1;
-        ldDims.duct1      = rd.duct1;
-        ldDims.lv2Radial  = rd.lv2;
-        ldDims.duct2      = rd.duct2;
-        ldDims.hvRadial   = rd.hv;
+        let rd = data.radialDims;
+        ldDims.coreDia      = rd.coreDia;
+        ldDims.lv1Radial    = rd.lv1;
+        ldDims.duct1        = rd.duct1;
+        ldDims.lv2Radial    = rd.lv2;
+        ldDims.duct2        = rd.duct2;
+        ldDims.hvRadial     = rd.hv;
         ldDims.windowHeight = s.windowHeight;
         ldDims.yokeHeight   = s.yokeHeight;
-        ldDims.lv1Height    = Math.round(s.windowHeight * 0.85);
-        ldDims.lv2Height    = Math.round(s.windowHeight * 0.90);
-        ldDims.hvHeight     = s.windowHeight;
         ldDims.limbSpacing  = s.limbSpacingA;
         ldDims.coreFootInsulation = 10;
+        // Winding heights: use backend side_view if available, else window height
+        let lySide = data.layout && data.layout.side_view ? data.layout.side_view : {};
+        ldDims.lv1Height = lySide.lv1_radial_depth_mm || s.windowHeight;
+        ldDims.lv2Height = lySide.lv2_radial_depth_mm || s.windowHeight;
+        ldDims.hvHeight  = lySide.hv_radial_depth_mm  || s.windowHeight;
     }
 }
 
-/* rounding helpers */
-function r0(v){ return Math.round(v); }
-function r1(v){ return parseFloat(v).toFixed(1); }
-function r2(v){ return parseFloat(v).toFixed(2); }
-function r3(v){ return parseFloat(v).toFixed(3); }
-function r4(v){ return parseFloat(v).toFixed(4); }
-
-function buildOutputRow(label, v1, v2, hv) {
-    return "<tr>" +
-        "<th>" + label + "</th>" +
-        "<td>" + v1   + "</td>" +
-        "<td>" + v2   + "</td>" +
-        "<td>" + hv   + "</td>" +
-        "</tr>";
-}
-
-function kvRow(label, value) {
-    return '<div class="kv-row">' +
-        '<span class="kv-label">' + label + '</span>' +
-        '<span class="kv-value">' + value + '</span>' +
-        '</div>';
-}
-
 /* =============================================
-   REAL CALCULATION ENGINE
-   Following Sara Consultants step-by-step method
-   (Steps 1–66 from design PDF)
+   DOWNLOAD TECHNICAL REPORT AS PDF  (jsPDF + autotable)
    ============================================= */
-function fallbackCalculation(inp) {
-    var sqrt3 = Math.sqrt(3);
-    var PI    = Math.PI;
-
-    // ─── MATERIAL CONSTANTS ──────────────────────────────────────────────
-    var rho_Cu  = 0.02128; // resistivity of Cu @ 75°C  (Ω·mm²/m)
-    var rho_Al  = 0.03533; // resistivity of Al @ 75°C
-    var dens_Cu = 8.89e-3; // kg/mm³
-    var dens_Al = 2.703e-3;
-    var dens_Fe = 7.65e-3;
-    var stackFactor = 0.96; // combined stacking/insulation factor on gross area
-
-    // Load loss factor (Table #5)
-    var llf = (inp.lv1mat === "Copper" || inp.lv1mat === "Cu") ? 2.4 : 12.79;
-
-    // Stray loss factor (Table #4) — use copper strip as default
-    var slf_lv = 0.9622;
-    var slf_hv = 0.9622;
-
-    // ─── STEP 1 — Volts / Turn (initial estimate) ────────────────────────
-    // k = 0.4–0.8 for copper; choose k based on kVA
-    var k = (inp.ratedPower <= 25) ? 0.45 : (inp.ratedPower <= 100) ? 0.55 : 0.62;
-    var vt_initial = k * Math.sqrt(inp.ratedPower);
-
-    // ─── STEP 2 — LV1 turns/phase ────────────────────────────────────────
-    // Phase voltage for LV1
-    var lv1PhaseV = (inp.lv1conn === "Star") ? inp.lv1Voltage / sqrt3 : inp.lv1Voltage;
-    var lv1Turns  = Math.round(lv1PhaseV / vt_initial);
-    lv1Turns = Math.max(lv1Turns, 1);
-
-    // ─── STEP 3 — Revised Volts/Turn ─────────────────────────────────────
-    var vt = lv1PhaseV / lv1Turns;
-
-    // ─── STEP 4 — Net Core Area ──────────────────────────────────────────
-    // e = 4.44 × f × B × A × N  =>  A = V/T / (4.44 × f × B × 1e-6) [mm²]
-    var A_net = vt / (4.44 * inp.frequency * inp.fluxDensity * 1e-6);
-
-    // ─── STEP 5 — Gross Core Area ─────────────────────────────────────────
-    var A_gross = A_net / stackFactor;
-
-    // ─── STEP 6 — Core cross section (tongue × stack, ratio 1.5–3) ───────
-    // Derive square-ish frame: tongue ≈ √A_gross  then stack = A_gross/tongue
-    var tongue = Math.round(Math.sqrt(A_gross / 1.8));
-    tongue = Math.ceil(tongue / 5) * 5; // round to nearest 5 mm
-    var stack  = Math.round(A_gross / tongue);
-    stack  = Math.ceil(stack / 5) * 5;
-    // Recalculate actual gross area & net area
-    A_gross = tongue * stack;
-    A_net   = A_gross * stackFactor;
-    vt      = lv1PhaseV / lv1Turns; // keep revised vt
-
-    // Effective core diameter (circle equivalent)
-    var coreDia = 2 * Math.sqrt(A_gross / PI); // mm
-
-    // ─── LV2 WINDING (Steps 7–25) ─────────────────────────────────────────
-    var lv2PhaseV  = (inp.lv2conn === "Star") ? inp.lv2Voltage / sqrt3 : inp.lv2Voltage;
-    var lv2Turns   = Math.round(lv2PhaseV / vt);
-    var lv2CurPhase = (inp.lv2kva * 1000) / (3 * lv2PhaseV);
-    var lv2Layers  = (lv2Turns <= 30) ? 1 : 2;
-    var lv2TpL     = Math.ceil(lv2Turns / lv2Layers);
-    var lv2CsNet   = lv2CurPhase / inp.lv2cd;           // mm² net
-    var lv2CsGross = lv2CsNet + 0.363;                   // corner radius correction
-    // End clearance = 12mm per side assumed for LV2
-    var wl2 = tongue - 2 * 12;
-    var lv2_bi   = wl2 / ((lv2TpL + 1) * 1);
-    var lv2_b    = lv2_bi - 0.1;
-    var lv2_h    = lv2CsGross / lv2_b;
-    var lv2_hi   = lv2_h + 0.1;
-    var lv2_csActual = lv2_b * lv2_h;
-    var lv2_cd   = lv2CurPhase / lv2_csActual;
-    var lv2_radThick = lv2_hi * 1 * lv2Layers + (lv2Layers - 1) * 5 + 0.3 * lv2Layers;
-
-    // ─── LV1 WINDING (Steps 7–25, same structure) ─────────────────────────
-    var lv1CurPhase = (inp.lv1kva * 1000) / (3 * lv1PhaseV);
-    var lv1Layers  = (lv1Turns <= 30) ? 1 : 2;
-    var lv1TpL     = Math.ceil(lv1Turns / lv1Layers);
-    var lv1CsNet   = lv1CurPhase / inp.lv1cd;
-    var lv1CsGross = lv1CsNet + 0.363;
-    var wl1 = tongue - 2 * 12;
-    var lv1_bi   = wl1 / ((lv1TpL + 1) * 1);
-    var lv1_b    = lv1_bi - 0.1;
-    var lv1_h    = lv1CsGross / lv1_b;
-    var lv1_hi   = lv1_h + 0.1;
-    var lv1_csActual = lv1_b * lv1_h;
-    var lv1_cd   = lv1CurPhase / lv1_csActual;
-    var lv1_radThick = lv1_hi * 1 * lv1Layers + (lv1Layers - 1) * 5 + 0.3 * lv1Layers;
-
-    // ─── HV WINDING (Steps 45–63) ─────────────────────────────────────────
-    var hvPhaseV   = (inp.hvconn === "Star") ? inp.hvVoltage / sqrt3
-                   : (inp.hvconn === "Delta") ? inp.hvVoltage : inp.hvVoltage / sqrt3;
-    var hvTurns    = Math.round(hvPhaseV / vt);
-    var hvCurPhase = (inp.hvkva * 1000) / (3 * hvPhaseV);
-    var hvLayers   = Math.max(2, Math.ceil(hvTurns / 20));
-    var hvTpL      = Math.ceil(hvTurns / hvLayers);
-    var hvCsNet    = hvCurPhase / inp.hvcd;
-    var hvCsGross  = hvCsNet + 0.86;
-    var wlH = tongue - 2 * 16;
-    var hv_bi   = wlH / ((hvTpL + 1) * 1);
-    var hv_b    = hv_bi - 0.1;
-    var hv_h    = hvCsGross / hv_b;
-    var hv_hi   = hv_h + 0.1;
-    var hv_csActual = hv_b * hv_h;
-    var hv_cd   = hvCurPhase / hv_csActual;
-    var hv_radThick = hv_hi * 1 * hvLayers + (hvLayers - 1) * 5 + 0.1 * hvLayers;
-
-    // ─── WINDOW HEIGHT ─────────────────────────────────────────────────────
-    // Max winding height + end clearances
-    var winding_len_lv1 = wl1;
-    var winding_len_lv2 = wl2;
-    var winding_len_hv  = wlH;
-    var windowHeight = Math.max(winding_len_lv1, winding_len_lv2, winding_len_hv) + 2 * 19 + 10;
-    windowHeight = Math.ceil(windowHeight / 10) * 10;
-
-    // ─── YOKE HEIGHT ────────────────────────────────────────────────────────
-    var yokeHeight = stack * 0.55;
-    yokeHeight = Math.ceil(yokeHeight / 5) * 5;
-
-    // ─── LMT CALCULATIONS ──────────────────────────────────────────────────
-    // LV1 ID = core frame + core-to-LV clearance (5 mm each side)
-    var lv1_id_t = tongue + 2 * 5;
-    var lv1_id_s = stack  + 2 * 5;
-    var lv1_od_t = lv1_id_t + 2 * lv1_radThick;
-    var lv1_od_s = lv1_id_s + 2 * lv1_radThick;
-    var lmt_lv1  = ((lv1_id_t + lv1_id_s + lv1_od_t + lv1_od_s) - (lv1_radThick) * 8 + 2 * PI * lv1_radThick) / 1000;
-
-    var duct_lv1_lv2 = 5; // mm (inner duct)
-    var lv2_id_t = lv1_od_t + 2 * duct_lv1_lv2;
-    var lv2_id_s = lv1_od_s + 2 * duct_lv1_lv2;
-    var lv2_od_t = lv2_id_t + 2 * lv2_radThick;
-    var lv2_od_s = lv2_id_s + 2 * lv2_radThick;
-    var lmt_lv2  = ((lv2_id_t + lv2_id_s + lv2_od_t + lv2_od_s) - (lv2_radThick) * 8 + 2 * PI * lv2_radThick) / 1000;
-
-    var duct_lv2_hv = 10; // mm
-    var hv_id_t  = lv2_od_t + 2 * duct_lv2_hv;
-    var hv_id_s  = lv2_od_s + 2 * duct_lv2_hv;
-    var hv_od_t  = hv_id_t + 2 * hv_radThick;
-    var hv_od_s  = hv_id_s + 2 * hv_radThick;
-    var lmt_hv   = ((hv_id_t + hv_id_s + hv_od_t + hv_od_s) - (hv_radThick) * 8 + 2 * PI * hv_radThick) / 1000;
-
-    // ─── WIRE LENGTHS ─────────────────────────────────────────────────────
-    var tol1 = 1 + (lv1Layers === 1 ? 1 : 5) / 100;
-    var tol2 = 1 + (lv2Layers === 1 ? 1 : 5) / 100;
-    var tolH = 1.01;
-    var wireLen_lv1 = lmt_lv1 * 1 * lv1Turns * 3 * tol1;
-    var wireLen_lv2 = lmt_lv2 * 1 * lv2Turns * 3 * tol2;
-    var wireLen_hv  = lmt_hv  * 1 * hvTurns  * 3 * tolH;
-
-    // ─── RESISTANCE @ 75°C ───────────────────────────────────────────────
-    var rho_lv1 = (inp.lv1mat === "Copper" || inp.lv1mat === "Cu") ? rho_Cu : rho_Al;
-    var rho_lv2 = (inp.lv2mat === "Copper" || inp.lv2mat === "Cu") ? rho_Cu : rho_Al;
-    var rho_hv  = (inp.hvmat  === "Copper" || inp.hvmat  === "Cu") ? rho_Cu : rho_Al;
-    var R75_lv1 = (rho_lv1 * lmt_lv1 * lv1Turns) / lv1_csActual;
-    var R75_lv2 = (rho_lv2 * lmt_lv2 * lv2Turns) / lv2_csActual;
-    var R75_hv  = (rho_hv  * lmt_hv  * hvTurns)  / hv_csActual;
-
-    // ─── BARE / PROCUREMENT WEIGHTS ───────────────────────────────────────
-    var dens_lv1 = (inp.lv1mat === "Copper" || inp.lv1mat === "Cu") ? dens_Cu : dens_Al;
-    var dens_lv2 = (inp.lv2mat === "Copper" || inp.lv2mat === "Cu") ? dens_Cu : dens_Al;
-    var dens_hv  = (inp.hvmat  === "Copper" || inp.hvmat  === "Cu") ? dens_Cu : dens_Al;
-    var bareWt_lv1 = lmt_lv1 * lv1Turns * lv1_csActual * 3 * dens_lv1;
-    var bareWt_lv2 = lmt_lv2 * lv2Turns * lv2_csActual * 3 * dens_lv2;
-    var bareWt_hv  = lmt_hv  * hvTurns  * hv_csActual  * 3 * dens_hv;
-
-    // ─── STRAY LOSS (Step 23/42/61) ───────────────────────────────────────
-    function strayLoss(b, bi, tpl, apCond, slf) {
-        var ratio = Math.sqrt((b * tpl * apCond) / ((bi * tpl * apCond) - 0.1));
-        var nRad  = apCond; // radial conductors
-        var slFrac = ratio * slf * Math.pow(nRad, 4 / 10) * ((nRad * nRad) - 0.2) / 9;
-        return 1 + slFrac / 100;
-    }
-    var stray_lv1 = strayLoss(lv1_b, lv1_bi, lv1TpL, 1, slf_lv);
-    var stray_lv2 = strayLoss(lv2_b, lv2_bi, lv2TpL, 1, slf_lv);
-    var stray_hv  = strayLoss(hv_b,  hv_bi,  hvTpL,  1, slf_hv);
-
-    // ─── LOAD LOSSES (Step 24/43/62) ──────────────────────────────────────
-    var ll_lv1 = llf * bareWt_lv1 * lv1_cd * lv1_cd * stray_lv1;
-    var ll_lv2 = llf * bareWt_lv2 * lv2_cd * lv2_cd * stray_lv2;
-    var ll_hv  = llf * bareWt_hv  * hv_cd  * hv_cd  * stray_hv;
-    var totalLoadLoss = Math.round(ll_lv1 + ll_lv2 + ll_hv);
-
-    // ─── CORE WEIGHT & CORE LOSS (Steps 64–65) ────────────────────────────
-    // Limb spacing A = hv_od_t/2 + margin
-    var limbSpacingA = Math.round((hv_od_t + tongue) / 2 + 20);
-    limbSpacingA = Math.ceil(limbSpacingA / 10) * 10;
-    // Core length = 2D + 3L + 4A
-    var coreLen_mm = 2 * tongue + 3 * windowHeight + 4 * limbSpacingA;
-    var coreWeight = (coreLen_mm * A_net * dens_Fe);   // kg
-
-    // Specific loss from flux density (approximate from Table #7, M-4 grade)
-    var specLoss;
-    var B = inp.fluxDensity;
-    if      (B <= 1.40) specLoss = 0.70;
-    else if (B <= 1.50) specLoss = 0.83;
-    else if (B <= 1.60) specLoss = 0.92;
-    else if (B <= 1.70) specLoss = 1.01;
-    else if (B <= 1.73) specLoss = 1.33;
-    else                specLoss = 1.50;
-
-    // Build factor (Table #8)
-    var buildFactor = (coreDia <= 150) ? 1.30 : (coreDia <= 300) ? 1.25 : 1.20;
-    var coreLoss = Math.round(coreWeight * specLoss * buildFactor);
-
-    var totalLoss = totalLoadLoss + coreLoss;
-
-    // ─── IMPEDANCE (Rogowski / leakage flux method) ───────────────────────
-    // Z% ≈ (2π f μ₀ × (turns²/phase) × LMT × ducts) / (rated impedance base)
-    // Simplified industrial formula:
-    var innerDuct   = duct_lv1_lv2;
-    var outerDuct   = duct_lv2_hv;
-    var atHV        = hvTurns;
-    var Lc          = windowHeight / 1000; // m
-    var at2         = atHV * atHV;
-    var aHVavg      = (lmt_hv  * 1000) / 1000; // m
-    var bHVavg      = (lmt_lv2 * 1000) / 1000;
-    var ductFactor   = (lv1_radThick / 3 + innerDuct + lv2_radThick / 3 + outerDuct + hv_radThick / 3) / 1000;
-    var vBase        = hvPhaseV;
-    var Zpu          = (2 * PI * inp.frequency * 4 * PI * 1e-7 * at2 * ductFactor * aHVavg) /
-                       (vBase * Lc);
-    var impedance    = +(Zpu * 100).toFixed(2);
-
-    // ─── REGULATION ───────────────────────────────────────────────────────
-    var Req = (R75_hv + R75_lv1 * Math.pow(hvTurns / lv1Turns, 2)) * 1000;
-    var regulation = +((Req / (vBase * 1000) * 100) + 0.5 * Zpu * Zpu * 100).toFixed(2);
-
-    // ─── ENCLOSURE DIMENSIONS (Step 66) ──────────────────────────────────
-    var enc_L = Math.round(50 + hv_od_s + limbSpacingA * 2 + 50);
-    var enc_W = Math.round(hv_od_t + 50 + 50 + 25);
-    var enc_H = Math.round(10 + windowHeight + 2 * yokeHeight + 100);
-
-    // ─── RADIAL & AXIAL LAYOUT DIMS (for Layout Design page) ──────────────
-    var radCoreDia  = Math.round(coreDia);
-    var radLV1      = Math.round(lv1_radThick);
-    var radDuct1    = duct_lv1_lv2;
-    var radLV2      = Math.round(lv2_radThick);
-    var radDuct2    = duct_lv2_hv;
-    var radHV       = Math.round(hv_radThick);
-
-    // ─── ASSEMBLE RESULT ──────────────────────────────────────────────────
-    return {
-        steps: {
-            vt, lv1Turns, lv2Turns, hvTurns,
-            A_net, A_gross, tongue, stack, coreDia,
-            lv1CurPhase, lv2CurPhase, hvCurPhase,
-            lv1Layers, lv2Layers, hvLayers,
-            lv1TpL, lv2TpL, hvTpL,
-            lv1_b, lv1_h, lv1_bi, lv1_hi, lv1_csActual, lv1_cd, lv1_radThick,
-            lv2_b, lv2_h, lv2_bi, lv2_hi, lv2_csActual, lv2_cd, lv2_radThick,
-            hv_b,  hv_h,  hv_bi,  hv_hi,  hv_csActual,  hv_cd,  hv_radThick,
-            lmt_lv1, lmt_lv2, lmt_hv,
-            wireLen_lv1, wireLen_lv2, wireLen_hv,
-            R75_lv1, R75_lv2, R75_hv,
-            bareWt_lv1, bareWt_lv2, bareWt_hv,
-            coreWeight, coreLen_mm, limbSpacingA,
-            ll_lv1, ll_lv2, ll_hv, totalLoadLoss,
-            coreLoss, totalLoss,
-            enc_L, enc_W, enc_H,
-            windowHeight, yokeHeight
-        },
-        windingSummary: {
-            LV1: {
-                turns:         lv1Turns,
-                conductorArea: +lv1_csActual.toFixed(2),
-                currentDensity:+lv1_cd.toFixed(2),
-                copperLoss:    Math.round(ll_lv1)
-            },
-            LV2: {
-                turns:         lv2Turns,
-                conductorArea: +lv2_csActual.toFixed(2),
-                currentDensity:+lv2_cd.toFixed(2),
-                copperLoss:    Math.round(ll_lv2)
-            },
-            HV: {
-                turns:         hvTurns,
-                conductorArea: +hv_csActual.toFixed(2),
-                currentDensity:+hv_cd.toFixed(2),
-                copperLoss:    Math.round(ll_hv)
-            }
-        },
-        coreDesign: {
-            netCoreArea:  +(A_net / 1e6).toFixed(6),
-            grossCoreArea:+(A_gross / 1e6).toFixed(6),
-            coreDiameter: +(coreDia / 1000).toFixed(4),
-            tongue:       tongue,
-            stack:        stack,
-            windowHeight: +(windowHeight / 1000).toFixed(4),
-            yokeHeight:   +(yokeHeight / 1000).toFixed(4),
-            coreWeight:   +coreWeight.toFixed(1),
-            limbSpacing:  limbSpacingA,
-            enc_L, enc_W, enc_H
-        },
-        radialDims: {
-            coreDia: radCoreDia,
-            lv1: radLV1, duct1: radDuct1,
-            lv2: radLV2, duct2: radDuct2,
-            hv:  radHV
-        },
-        performance: {
-            coreLoss,
-            totalLoadLoss,
-            totalLoss,
-            impedance:  +impedance.toFixed(2),
-            regulation: +Math.abs(regulation).toFixed(2)
-        }
-    };
-}
-
-/* =============================================
-   DOWNLOAD TECHNICAL REPORT AS PDF
-   ============================================= */
-var downloadBtn = document.getElementById("downloadPdfBtn");
+let downloadBtn = document.getElementById("downloadPdfBtn");
 if (downloadBtn) {
     downloadBtn.addEventListener("click", function() {
-        window.print();
+        generateTechnicalReportPDF();
     });
 }
 
+/* ── stored last result so PDF generator can access it ── */
+let _lastInputData  = null;
+let _lastResultData = null;
+
+function generateTechnicalReportPDF() {
+    if (!_lastInputData || !_lastResultData) {
+        showToast("Please run a calculation first before downloading the report.", "warn");
+        return;
+    }
+
+    let inp = _lastInputData;
+    let res = _lastResultData;
+    let s   = res.steps;
+    let pf  = res.performance;
+    let cm  = res.coreMatMeta;
+    let w   = res.windingSummary;
+
+    // ── init jsPDF ──────────────────────────────────────────────────────
+    let jsPDF = window.jspdf ? window.jspdf.jsPDF : (window.jsPDF || (typeof jsPDF !== "undefined" ? jsPDF : null));
+    if (!jsPDF) { showToast("PDF library not loaded. Please check your internet connection.", "error"); return; }
+
+    let doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    let PW  = 210;   // page width mm
+    let PH  = 297;   // page height mm
+    let ML  = 14;    // margin left
+    let MR  = 14;    // margin right
+    let TW  = PW - ML - MR;  // table width
+    let y   = 0;     // current y cursor
+
+    // ── colour palette ───────────────────────────────────────────────────
+    let C_DARK   = [30,  30,  46];   // header bar
+    let C_ACCENT = [0,  122, 204];   // blue accent
+    let C_HEAD   = [45,  45,  65];   // section headers
+    let C_ALT    = [245, 247, 250];  // alternating row
+    let C_WHITE  = [255, 255, 255];
+    let C_BORDER = [200, 205, 215];
+    let C_TEXT   = [30,  30,  30];
+    let C_MID    = [100, 105, 120];
+
+    function checkPageBreak(neededMM) {
+        if (y + neededMM > PH - 18) {
+            doc.addPage();
+            y = 20;
+            addFooter(doc.getNumberOfPages());
+        }
+    }
+
+    function addFooter(pageNum) {
+        let total = doc.getNumberOfPages();
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(...C_MID);
+        doc.setDrawColor(...C_BORDER);
+        doc.line(ML, PH - 12, PW - MR, PH - 12);
+        doc.text("Dry Type Transformer Design Report  |  Generated " + new Date().toLocaleDateString(), ML, PH - 7);
+        doc.text("Page " + pageNum + " / " + total, PW - MR, PH - 7, { align: "right" });
+    }
+
+    // ── COVER / TITLE PAGE ───────────────────────────────────────────────
+    // Dark header band
+    doc.setFillColor(...C_DARK);
+    doc.rect(0, 0, PW, 55, "F");
+
+    // Blue accent bar
+    doc.setFillColor(...C_ACCENT);
+    doc.rect(0, 55, PW, 4, "F");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.setTextColor(...C_WHITE);
+    doc.text("DRY TYPE TRANSFORMER", PW / 2, 22, { align: "center" });
+    doc.text("DESIGN TECHNICAL REPORT", PW / 2, 32, { align: "center" });
+
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(180, 210, 240);
+    doc.text("Complete Design Calculations  |  IS 1180 : 2014 Part 1", PW / 2, 43, { align: "center" });
+
+    // Summary box
+    y = 70;
+    doc.setFillColor(250, 251, 253);
+    doc.setDrawColor(...C_BORDER);
+    doc.roundedRect(ML, y, TW, 68, 3, 3, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...C_ACCENT);
+    doc.text("TRANSFORMER SPECIFICATION SUMMARY", ML + 6, y + 9);
+
+    // 2-column summary grid
+    let col1x = ML + 6, col2x = ML + TW / 2 + 4;
+    let summaryRows = [
+        ["Rated Power",       (inp.ratedPower || "—") + " kVA",
+         "Vector Group",      (inp.vectorGroup || "—").toUpperCase()],
+        ["Phases",            (inp.phases || "—") + " Phase",
+         "Frequency",         (inp.frequency || "—") + " Hz"],
+        ["HV Voltage",        (inp.hvVoltage || "—") + " V  (" + toConnLabel(inp.hvconn) + ")",
+         "Insulation Class",  "Class " + (inp.insulationClass || "—").toUpperCase()],
+        ["LV1 Voltage",       (inp.lv1Voltage || "—") + " V  (" + toConnLabel(inp.lv1conn) + ")",
+         "LV2 Voltage",       (inp.lv2Voltage || "—") + " V  (" + toConnLabel(inp.lv2conn) + ")"],
+        ["Flux Density",      (inp.fluxDensity || "—") + " T",
+         "Core Material",     (cm ? cm.type + " · " + cm.grade : "—")],
+        ["No-Load Losses",    r0(pf.coreLoss) + " W",
+         "Full-Load Losses",  r0(pf.totalLoadLoss) + " W"],
+        ["Impedance Voltage", r2(pf.impedance) + " %",
+         "Total Losses",      r0(pf.totalLoss) + " W"],
+    ];
+
+    let sy = y + 17;
+    summaryRows.forEach(function(row, i) {
+        if (i % 2 === 0) {
+            doc.setFillColor(248, 250, 253);
+            doc.rect(ML + 1, sy - 4, TW - 2, 8, "F");
+        }
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(...C_MID);
+        doc.text(row[0], col1x, sy);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...C_TEXT);
+        doc.text(row[1], col1x + 36, sy);
+
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...C_MID);
+        doc.text(row[2], col2x, sy);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(...C_TEXT);
+        doc.text(row[3], col2x + 36, sy);
+        sy += 8.5;
+    });
+
+    addFooter(1);
+
+    // ════════════════════════════════════════════════════════════════════
+    // ── helper: draw a section heading ──────────────────────────────────
+    // ════════════════════════════════════════════════════════════════════
+    function sectionHeading(title, subtitle) {
+        checkPageBreak(22);
+        doc.setFillColor(...C_HEAD);
+        doc.rect(ML, y, TW, 10, "F");
+        doc.setFillColor(...C_ACCENT);
+        doc.rect(ML, y, 4, 10, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.setTextColor(...C_WHITE);
+        doc.text(title, ML + 8, y + 6.8);
+        if (subtitle) {
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8);
+            doc.setTextColor(180, 210, 240);
+            doc.text(subtitle, PW - MR, y + 6.8, { align: "right" });
+        }
+        y += 13;
+    }
+
+    function subHeading(title) {
+        checkPageBreak(12);
+        doc.setFillColor(235, 240, 248);
+        doc.rect(ML, y, TW, 7.5, "F");
+        doc.setDrawColor(...C_ACCENT);
+        doc.line(ML, y, ML, y + 7.5);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9);
+        doc.setTextColor(...C_HEAD);
+        doc.text(title, ML + 5, y + 5);
+        y += 10;
+    }
+
+    // ── helper: two-column parameter table (label | value) ───────────────
+    function paramTable(rows, colWidths) {
+        let cw = colWidths || [TW * 0.58, TW * 0.42];
+        let rowH = 7.5;
+        rows.forEach(function(row, i) {
+            checkPageBreak(rowH + 2);
+            // alternating rows
+            if (i % 2 === 0) {
+                doc.setFillColor(...C_ALT);
+                doc.rect(ML, y, TW, rowH, "F");
+            }
+            doc.setDrawColor(...C_BORDER);
+            doc.rect(ML, y, TW, rowH);
+            // divider
+            doc.line(ML + cw[0], y, ML + cw[0], y + rowH);
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(8.5);
+            doc.setTextColor(...C_TEXT);
+            doc.text(String(row[0]), ML + 3, y + 5);
+            doc.setFont("helvetica", "bold");
+            doc.text(String(row[1]), ML + cw[0] + 3, y + 5);
+            y += rowH;
+        });
+        y += 2;
+    }
+
+    // ── helper: four-column table ─────────────────────────────────────────
+    function param4Table(rows) {
+        let cw = [TW * 0.30, TW * 0.20, TW * 0.30, TW * 0.20];
+        let rowH = 7.5;
+        rows.forEach(function(row, i) {
+            checkPageBreak(rowH + 2);
+            if (i % 2 === 0) {
+                doc.setFillColor(...C_ALT);
+                doc.rect(ML, y, TW, rowH, "F");
+            }
+            doc.setDrawColor(...C_BORDER);
+            doc.rect(ML, y, TW, rowH);
+            let xs = [ML, ML + cw[0], ML + cw[0] + cw[1], ML + cw[0] + cw[1] + cw[2]];
+            cw.forEach(function(w_, j) {
+                doc.line(xs[j], y, xs[j], y + rowH);
+            });
+            let isLabel = [true, false, true, false];
+            row.forEach(function(cell, j) {
+                doc.setFont("helvetica", isLabel[j] ? "normal" : "bold");
+                doc.setFontSize(8.5);
+                doc.setTextColor(...C_TEXT);
+                doc.text(String(cell || "—"), xs[j] + 3, y + 5);
+            });
+            y += rowH;
+        });
+        y += 2;
+    }
+
+    // ── helper: table column headers ──────────────────────────────────────
+    function tableHeader2(h1, h2) {
+        checkPageBreak(9);
+        let cw = [TW * 0.58, TW * 0.42];
+        doc.setFillColor(...C_DARK);
+        doc.rect(ML, y, TW, 8, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.setTextColor(...C_WHITE);
+        doc.text(h1, ML + 3, y + 5.5);
+        doc.text(h2, ML + cw[0] + 3, y + 5.5);
+        y += 8;
+    }
+
+    function tableHeader4(h1, h2, h3, h4) {
+        checkPageBreak(9);
+        let cw = [TW * 0.30, TW * 0.20, TW * 0.30, TW * 0.20];
+        let xs = [ML, ML + cw[0], ML + cw[0] + cw[1], ML + cw[0] + cw[1] + cw[2]];
+        doc.setFillColor(...C_DARK);
+        doc.rect(ML, y, TW, 8, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.setTextColor(...C_WHITE);
+        [h1, h2, h3, h4].forEach(function(h, i) { doc.text(h, xs[i] + 3, y + 5.5); });
+        y += 8;
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  PAGE 2 — SECTION 1: CORE DESIGN
+    // ══════════════════════════════════════════════════════════════════════
+    doc.addPage();
+    addFooter(2);
+    y = 20;
+
+    sectionHeading("SECTION 1 — CORE DESIGN", inp.ratedPower + " kVA  |  " + (inp.vectorGroup || "").toUpperCase());
+
+    // Use backend-provided values — no recalculation in frontend
+    let endClr = s.endClearance  || 0;
+    let netWL  = s.windingLength  || 0;
+    let lv1pV  = s.lv1CurPhase ? (w1 ? w1.voltage_per_phase : 0) : 0;  // display only
+    let revVT  = r4(s.vt);
+
+    tableHeader2("PARAMETER", "VALUE");
+    paramTable([
+        ["Initial Volts per Turn (estimate)",  r4(s.vt) + " V"],
+        ["LV1 Phase Voltage",                  (inp.lv1conn === "Y")
+                                                  ? inp.lv1Voltage + " / √3 V"
+                                                  : inp.lv1Voltage + " V"],
+        ["LV1 Turns per Phase",                s.lv1Turns + " turns"],
+        ["Revised Volts per Turn",             revVT + " V"],
+        ["Net Core Flux Density (B)",          r2(inp.fluxDensity) + " T"],
+        ["Net Core Area (A_net)",              r0(s.A_net) + " mm²"],
+        ["Gross Core Area (A_gross)",          r0(s.A_gross) + " mm²"],
+        ["Stack Factor",                       cm ? cm.stackFactor : "—"],
+        ["Core Frame — Tongue × Stack",        s.tongue + " × " + s.stack + " mm"],
+        ["Window Height",                      r0(s.windowHeight) + " mm"],
+        ["Yoke Height",                        r0(s.yokeHeight) + " mm"],
+        ["End Clearance (each side)",          r0(endClr) + " mm"],
+        ["Net Winding Length",                 r0(netWL) + " mm"],
+        ["Limb Spacing (centre to centre)",    s.limbSpacingA + " mm"],
+        ["Core Length",                        r0(s.coreLen_mm) + " mm"],
+        ["Core Weight",                        r1(s.coreWeight) + " kg"],
+        ["Specific Loss (W/kg)",               cm ? r3(cm.specLoss) + " W/kg  @ " + r2(inp.fluxDensity) + " T" : "—"],
+        ["Build Factor",                       cm ? cm.buildFactor : "—"],
+        ["Core Loss  (Wt × Spec.Loss × BF)",   r0(s.coreLoss) + " W"],
+        ["Enclosure (L × W × H)",              s.enc_L + " × " + s.enc_W + " × " + s.enc_H + " mm"],
+    ]);
+
+    // Cross conductor area sub-section
+    subHeading("Cross Conductor Area Calculations");
+    tableHeader4("PARAMETER", "VALUE", "PARAMETER", "VALUE");
+    param4Table([
+        ["Window Height",           r0(s.windowHeight) + " mm",
+         "LV1 Conductor b (bare)",  r2(s.lv1_b) + " mm"],
+        ["End Clearance",           endClr + " mm",
+         "LV1 Conductor b (ins.)",  r2(s.lv1_bi) + " mm"],
+        ["Net Winding Length",      netWL + " mm",
+         "LV1 Conductor h (bare)",  r2(s.lv1_h) + " mm"],
+        ["Winding Length (eff.)",   netWL + " mm",
+         "LV1 Conductor h (ins.)",  r2(s.lv1_hi) + " mm"],
+        ["Total Parallel (LV1)",    String((s.lv1Np || 1) * (s.lv1Nr || 1)),
+         "LV1 Conductor Area",      r2(s.lv1_csActual) + " mm²"],
+        ["Total Parallel (LV2)",    String((s.lv2Np || 1) * (s.lv2Nr || 1)),
+         "LV2 Conductor Area",      r2(s.lv2_csActual) + " mm²"],
+        ["Total Parallel (HV)",     String((s.hvNp  || 1) * (s.hvNr  || 1)),
+         "HV  Conductor Area",      r2(s.hv_csActual)  + " mm²"],
+    ]);
+
+    // Core material sub-section
+    subHeading("Core Material Summary");
+    if (cm) {
+        tableHeader2("PARAMETER", "VALUE");
+        paramTable([
+            ["Material Type",           cm.type],
+            ["Grade / Standard",        cm.grade],
+            ["Sheet Thickness",         cm.thickness],
+            ["Density",                 cm.density],
+            ["Stack Factor",            String(cm.stackFactor)],
+            ["Specific Loss (W/kg)",    cm.specLoss + " W/kg  @ " + r2(inp.fluxDensity) + " T"],
+            ["Build Factor",            String(cm.buildFactor)],
+            ["Core Weight",             r1(s.coreWeight) + " kg"],
+            ["Core Loss Formula",       cm.type + " · " + r1(s.coreWeight) + " kg × " + cm.specLoss + " W/kg × " + cm.buildFactor],
+            ["Core Loss (Step 65)",     r0(s.coreLoss) + " W"],
+        ]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  SECTION 2: WINDING DESIGN  (one page per winding)
+    // ══════════════════════════════════════════════════════════════════════
+    let windings = [
+        { label: "LV1", turns: s.lv1Turns, tpL: s.lv1TpL, layers: s.lv1Layers,
+          np: s.lv1Np, nr: s.lv1Nr,
+          curPhase: s.lv1CurPhase, b: s.lv1_b, bi: s.lv1_bi, h: s.lv1_h, hi: s.lv1_hi,
+          cs: s.lv1_csActual, cd: s.lv1_cd, interLayerIns: s.lv1_interLayerIns,
+          radThick: s.lv1_radThick, lmt: s.lmt_lv1, wl: s.wireLen_lv1, R75: s.R75_lv1,
+          bareWt: s.bareWt_lv1, insWt: s.insWt_lv1, procWt: s.procWt_lv1,
+          strayPct: s.strayPct_lv1, loadLoss: s.ll_lv1, gradient: s.gradient_lv1,
+          voltage: inp.lv1Voltage, conn: inp.lv1conn, mat: inp.lv1mat, kva: inp.lv1kva },
+        { label: "LV2", turns: s.lv2Turns, tpL: s.lv2TpL, layers: s.lv2Layers,
+          np: s.lv2Np, nr: s.lv2Nr,
+          curPhase: s.lv2CurPhase, b: s.lv2_b, bi: s.lv2_bi, h: s.lv2_h, hi: s.lv2_hi,
+          cs: s.lv2_csActual, cd: s.lv2_cd, interLayerIns: s.lv2_interLayerIns,
+          radThick: s.lv2_radThick, lmt: s.lmt_lv2, wl: s.wireLen_lv2, R75: s.R75_lv2,
+          bareWt: s.bareWt_lv2, insWt: s.insWt_lv2, procWt: s.procWt_lv2,
+          strayPct: s.strayPct_lv2, loadLoss: s.ll_lv2, gradient: s.gradient_lv2,
+          voltage: inp.lv2Voltage, conn: inp.lv2conn, mat: inp.lv2mat, kva: inp.lv2kva },
+        { label: "HV",  turns: s.hvTurns,  tpL: s.hvTpL,  layers: s.hvLayers,
+          np: s.hvNp,  nr: s.hvNr,
+          curPhase: s.hvCurPhase, b: s.hv_b, bi: s.hv_bi, h: s.hv_h, hi: s.hv_hi,
+          cs: s.hv_csActual, cd: s.hv_cd, interLayerIns: s.hv_interLayerIns,
+          radThick: s.hv_radThick, lmt: s.lmt_hv, wl: s.wireLen_hv, R75: s.R75_hv,
+          bareWt: s.bareWt_hv, insWt: s.insWt_hv, procWt: s.procWt_hv,
+          strayPct: s.strayPct_hv, loadLoss: s.ll_hv, gradient: s.gradient_hv,
+          voltage: inp.hvVoltage, conn: inp.hvconn, mat: inp.hvmat, kva: inp.hvkva },
+    ];
+
+    windings.forEach(function(wnd, wi) {
+        doc.addPage();
+        addFooter(3 + wi);
+        y = 20;
+
+        // Phase voltage label — display only
+        let phV = (wnd.conn === "Y")
+            ? wnd.voltage + " / √3 V"
+            : wnd.voltage + " V";
+
+        sectionHeading(
+            "SECTION 2 — WINDING DESIGN  :  " + wnd.label + " WINDING",
+            toConnLabel(wnd.conn) + "  |  " + wnd.mat.toUpperCase()
+        );
+
+        tableHeader2("PARAMETER", "VALUE");
+        paramTable([
+            ["Winding",                               wnd.label],
+            ["Voltage (line)",                        wnd.voltage + " V"],
+            ["Voltage per Phase",                     phV],
+            ["Connection Type",                       toConnLabel(wnd.conn)],
+            ["Conductor Material",                    wnd.mat.toUpperCase()],
+            ["Rated kVA",                             (wnd.kva || inp.ratedPower) + " kVA"],
+            ["Current per Phase",                     r2(wnd.curPhase) + " A"],
+            ["Turns per Phase",                       String(wnd.turns)],
+            ["Number of Layers",                      String(wnd.layers)],
+            ["Turns per Layer",                       String(wnd.tpL)],
+            ["Axial Parallel Conductors (Np)",        String(wnd.np)],
+            ["Radial Parallel Conductors (Nr)",       String(wnd.nr)],
+            ["Total Parallel Conductors (Np × Nr)",   String(wnd.np * wnd.nr)],
+            ["Conductor Breadth — bare",              r2(wnd.b)   + " mm"],
+            ["Conductor Breadth — insulated",         r2(wnd.bi)  + " mm"],
+            ["Conductor Height — bare",               r2(wnd.h)   + " mm"],
+            ["Conductor Height — insulated",          r2(wnd.hi)  + " mm"],
+            ["Net Conductor Area",                    r2(wnd.cs)  + " mm²"],
+            ["Actual Current Density",                r2(wnd.cd)  + " A/mm²"],
+            ["Inter-Layer Insulation",                r2(wnd.interLayerIns) + " mm"],
+            ["Radial Build (winding thickness)",      r2(wnd.radThick) + " mm"],
+            ["Mean Turn Length (LMT)",                r3(wnd.lmt) + " m"],
+            ["Total Wire Length",                     r1(wnd.wl)  + " m"],
+            ["Resistance per Phase @ 75°C",           r4(wnd.R75) + " \u03a9"],
+            ["Bare Weight",                           r1(wnd.bareWt)  + " kg"],
+            ["Insulated Weight",                      r1(wnd.insWt)   + " kg"],
+            ["Procurement Weight",                    r1(wnd.procWt)  + " kg"],
+            ["Stray Loss (%)",                        r3(wnd.strayPct) + " %"],
+            ["Load Loss  (I\u00b2R + Stray)",         r0(wnd.loadLoss) + " W"],
+            ["Winding Temperature Gradient",          r1(wnd.gradient) + " \u00b0C"],
+        ]);
+    });
+
+    // ══════════════════════════════════════════════════════════════════════
+    //  FINAL PAGE — PERFORMANCE SUMMARY
+    // ══════════════════════════════════════════════════════════════════════
+    doc.addPage();
+    addFooter(3 + windings.length);
+    y = 20;
+
+    sectionHeading("PERFORMANCE SUMMARY", inp.ratedPower + " kVA  ·  " + (inp.vectorGroup || "").toUpperCase());
+
+    tableHeader2("PARAMETER", "VALUE");
+    paramTable([
+        ["Core Loss (No-Load Loss)",         r0(pf.coreLoss)      + " W"],
+        ["LV1 Winding Load Loss",            r0(s.ll_lv1)         + " W"],
+        ["LV2 Winding Load Loss",            r0(s.ll_lv2)         + " W"],
+        ["HV  Winding Load Loss",            r0(s.ll_hv)          + " W"],
+        ["Total Full-Load Loss",             r0(pf.totalLoadLoss) + " W"],
+        ["Total Loss (Core + Full Load)",    r0(pf.totalLoss)     + " W"],
+        ["Impedance Voltage (%)",            r2(pf.impedance)     + " %"],
+        ["Voltage Regulation (%)",           r2(pf.regulation)    + " %"],
+        ["Core Weight",                      r1(s.coreWeight)     + " kg"],
+        ["LV1 Bare Conductor Weight",        r1(s.bareWt_lv1)     + " kg"],
+        ["LV2 Bare Conductor Weight",        r1(s.bareWt_lv2)     + " kg"],
+        ["HV  Bare Conductor Weight",        r1(s.bareWt_hv)      + " kg"],
+        ["Total Active Weight (est.)",       r1(s.coreWeight + s.bareWt_lv1 + s.bareWt_lv2 + s.bareWt_hv) + " kg"],
+        ["Enclosure (L × W × H)",           s.enc_L + " × " + s.enc_W + " × " + s.enc_H + " mm"],
+    ]);
+
+    // Fix all page footers with correct total
+    let total = doc.getNumberOfPages();
+    for (let p = 1; p <= total; p++) {
+        doc.setPage(p);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(...C_MID);
+        // rewrite page numbers now we know total
+        doc.setFillColor(...C_WHITE);
+        doc.rect(PW - MR - 30, PH - 12, 32, 8, "F");
+        doc.text("Page " + p + " / " + total, PW - MR, PH - 7, { align: "right" });
+    }
+
+    // ── save ──────────────────────────────────────────────────────────────
+    let filename = "TechReport_" + (inp.ratedPower || "0") + "kVA_" +
+                   (inp.vectorGroup || "").toUpperCase() + "_" +
+                   new Date().toISOString().slice(0, 10) + ".pdf";
+    doc.save(filename);
+}
+
+
+/* ── Toast notification (replaces alert() — non-blocking, auto-dismiss) ── */
+function showToast(message, type) {
+    let existing = document.getElementById("_toast");
+    if (existing) existing.remove();
+
+    let toast = document.createElement("div");
+    toast.id = "_toast";
+    let bg = type === "error" ? "background:#c0392b;border-left:4px solid #e74c3c"
+           : type === "warn"  ? "background:#7d4e0a;border-left:4px solid #f39c12"
+           :                    "background:#1a3f5c;border-left:4px solid #2980b9";
+    toast.style.cssText =
+        "position:fixed;bottom:24px;right:24px;z-index:9999;" +
+        "padding:12px 20px;border-radius:6px;font:600 13px/1.4 Arial,sans-serif;" +
+        "max-width:420px;box-shadow:0 4px 16px rgba(0,0,0,.5);" +
+        "color:#fff;opacity:0;transition:opacity .2s;" + bg;
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    requestAnimationFrame(function() {
+        requestAnimationFrame(function() { toast.style.opacity = "1"; });
+    });
+    setTimeout(function() {
+        toast.style.opacity = "0";
+        setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 250);
+    }, 4000);
+}
+
+/* ── Print utility — DRY wrapper around window.print() ─────────── */
+function printPage(hideSelectors) {
+    let hidden = (hideSelectors || []).map(function(s) {
+        return document.querySelector(s);
+    }).filter(Boolean);
+    hidden.forEach(function(el) { el.style.display = "none"; });
+    window.print();
+    hidden.forEach(function(el) { el.style.display = ""; });
+}
 /* =============================================
    BOM PAGE — ACTION BUTTONS
    ============================================= */
-var bomDownloadPdf   = document.getElementById("bomDownloadPdf");
-var bomDownloadExcel = document.getElementById("bomDownloadExcel");
-var bomPrint         = document.getElementById("bomPrint");
+const bomDownloadPdf   = document.getElementById("bomDownloadPdf");
+const bomDownloadExcel = document.getElementById("bomDownloadExcel");
+const bomPrint         = document.getElementById("bomPrint");
 
 if (bomDownloadPdf) {
-    bomDownloadPdf.addEventListener("click", function() { window.print(); });
+    bomDownloadPdf.addEventListener("click", function() { printPage(); });
 }
 
 if (bomDownloadExcel) {
     bomDownloadExcel.addEventListener("click", function() {
-        alert("Excel export will be connected to the Electron backend.");
+        showToast("Excel export coming soon — will be connected to the Electron backend.", "warn");
     });
 }
 
 if (bomPrint) {
-    bomPrint.addEventListener("click", function() { window.print(); });
+    bomPrint.addEventListener("click", function() { printPage(); });
 }
 
-/* Update BOM rating when a calculation is run */
-function updateBomRating(kva) {
-    var el = document.getElementById("bomRating");
-    if (el && kva) { el.textContent = kva + " kVA"; }
+/* Populate full BOM table from backend bom object */
+function populateBom(result) {
+    let bm = result.bom || {};
+    let kva = _lastInputData ? _lastInputData.ratedPower : "";
+
+    // Rating label
+    let ratingEl = document.getElementById("bomRating");
+    if (ratingEl && kva) ratingEl.textContent = kva + " kVA";
+
+    // ── Core row ─────────────────────────────────────────────────────────────────────
+    let cBody = document.getElementById("bomCoreBody");
+    if (cBody && bm.core) {
+        let cr = bm.core;
+        cBody.innerHTML =
+            "<tr>" +
+            "<td>Core</td>" +
+            "<td>" + (cr.material     || "—") + "</td>" +
+            "<td class=\"col-num\">" + r2(cr.weight_kg    || 0) + " kg</td>" +
+            "<td class=\"col-num\">₹ " + r0(cr.price_per_kg || 0) + "</td>" +
+            "<td>" + (cr.price_source  || "—") + "</td>" +
+            "<td class=\"col-num bom-cost\">₹ " + r0(cr.cost_inr || 0) + "</td>" +
+            "</tr>";
+    }
+
+    // ── Winding rows ───────────────────────────────────────────────────────────────────
+    let wBody = document.getElementById("bomWindingBody");
+    if (wBody && bm.windings) {
+        let wd = bm.windings;
+        let rows = [["LV1", wd.lv1], ["LV2", wd.lv2], ["HV", wd.hv]]
+            .map(function(pair) {
+                let label = pair[0], w = pair[1] || {};
+                let cls = label === "HV" ? "bom-winding-label hv" : "bom-winding-label lv";
+                return "<tr>" +
+                    "<td class=\"" + cls + "\">" + label + "</td>" +
+                    "<td>" + (w.material      || "—") + "</td>" +
+                    "<td class=\"col-num\">" + r2(w.weight_kg    || 0) + " kg</td>" +
+                    "<td class=\"col-num\">₹ " + r0(w.price_per_kg || 0) + "</td>" +
+                    "<td>" + (w.price_source  || "—") + "</td>" +
+                    "<td class=\"col-num bom-cost\">₹ " + r0(w.cost_inr || 0) + "</td>" +
+                    "</tr>";
+            });
+
+        rows.push(
+            "<tr class=\"bom-subtotal\">" +
+            "<td colspan=\"5\"><strong>Total Conductor</strong></td>" +
+            "<td class=\"col-num\"><strong>₹ " + r0(wd.total_conductor_cost || 0) + "</strong></td>" +
+            "</tr>"
+        );
+
+        wBody.innerHTML = rows.join("");
+    }
+
+    // ── Summary card ──────────────────────────────────────────────────────────────────────
+    setText("bomActiveWeight",    r1(bm.active_part_weight_kg || 0) + " kg");
+    setText("bomEnclosureWeight", r1(bm.enclosure_weight_kg   || 0) + " kg");
+    setText("bomTotalCost",       "₹ " + r0(bm.total_cost_inr || 0));
+    setText("bomCurrency",        bm.currency || "INR");
 }
 
 /* =============================================
@@ -598,24 +1505,24 @@ function updateBomRating(kva) {
    ============================================= */
 
 /* --- Export as SVG --- */
-var rpExportSvg = document.getElementById("rpExportSvg");
+const rpExportSvg = document.getElementById("rpExportSvg");
 if (rpExportSvg) {
     rpExportSvg.addEventListener("click", function() {
-        var plate = document.getElementById("ratingPlateExport");
+        let plate = document.getElementById("ratingPlateExport");
         if (!plate) return;
 
         // Inline all computed styles into a clone so SVG is self-contained
-        var clone = plate.cloneNode(true);
-        var allEls = plate.querySelectorAll("*");
-        var cloneEls = clone.querySelectorAll("*");
+        let clone = plate.cloneNode(true);
+        let allEls = plate.querySelectorAll("*");
+        let cloneEls = clone.querySelectorAll("*");
 
         allEls.forEach(function(el, i) {
-            var computed = window.getComputedStyle(el);
+            let computed = window.getComputedStyle(el);
             cloneEls[i].style.cssText = computed.cssText;
         });
 
-        var html = clone.innerHTML;
-        var svgContent =
+        let html = clone.innerHTML;
+        let svgContent =
             '<svg xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml"' +
             ' width="740" height="' + (plate.scrollHeight + 40) + '">' +
             '<foreignObject width="100%" height="100%">' +
@@ -623,9 +1530,9 @@ if (rpExportSvg) {
             clone.outerHTML +
             '</body></html></foreignObject></svg>';
 
-        var blob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
-        var url  = URL.createObjectURL(blob);
-        var a    = document.createElement("a");
+        let blob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
+        let url  = URL.createObjectURL(blob);
+        let a    = document.createElement("a");
         a.href     = url;
         a.download = "rating_plate.svg";
         a.click();
@@ -634,21 +1541,10 @@ if (rpExportSvg) {
 }
 
 /* --- Export as PDF (print dialog) --- */
-var rpExportPdf = document.getElementById("rpExportPdf");
+const rpExportPdf = document.getElementById("rpExportPdf");
 if (rpExportPdf) {
     rpExportPdf.addEventListener("click", function() {
-        // Hide everything except the plate, print, then restore
-        var pageWrap  = document.querySelector(".rp-page-wrap");
-        var exportBar = document.querySelector(".rp-export-bar");
-        var mainHeader = document.querySelector(".main-header");
-
-        if (exportBar)   exportBar.style.display = "none";
-        if (mainHeader)  mainHeader.style.display = "none";
-
-        window.print();
-
-        if (exportBar)   exportBar.style.display = "";
-        if (mainHeader)  mainHeader.style.display = "";
+        printPage([".rp-export-bar", ".main-header"]);
     });
 }
 
@@ -657,7 +1553,7 @@ if (rpExportPdf) {
    ============================================= */
 
 // Global layout dimensions (updated from calculation results)
-var ldDims = {
+let ldDims = {
     coreDia:    150,   // mm
     lv1Radial:  25,
     duct1:      12,
@@ -674,40 +1570,45 @@ var ldDims = {
     numLimbs:   3
 };
 
-/* Call this after runCalculation to feed real values */
+/* Feed layout dimensions from backend result — no local approximations */
 function updateLayoutDimensions(data) {
     if (!data) return;
-    var cd = data.coreDesign;
-    var ws = data.windingSummary;
 
-    if (cd) {
-        ldDims.coreDia      = Math.round((cd.coreDiameter || 0.15) * 1000);
-        ldDims.yokeHeight   = Math.round((cd.windowHeight || 0.24) * 1000 * 0.4);
-        ldDims.windowHeight = Math.round((cd.windowHeight || 0.24) * 1000);
-    }
+    let s      = data.steps       || {};
+    let rd     = data.radialDims  || {};
+    let ly     = data.layout      || {};
+    let lyFront = ly.front_view   || {};
+    let lySide  = ly.side_view    || {};
+    let lyTop   = ly.top_view     || {};
 
-    // Derive radial from conductor areas (rough approximation)
-    if (ws) {
-        var lv1Area = ws.LV1 ? (ws.LV1.conductorArea || 25) : 25;
-        var lv2Area = ws.LV2 ? (ws.LV2.conductorArea || 18) : 18;
-        var hvArea  = ws.HV  ? (ws.HV.conductorArea  || 27) : 27;
-        ldDims.lv1Radial = Math.max(10, Math.round(lv1Area * 0.8));
-        ldDims.lv2Radial = Math.max(10, Math.round(lv2Area * 0.7));
-        ldDims.hvRadial  = Math.max(15, Math.round(hvArea  * 0.9));
-        ldDims.lv1Height = Math.round(ldDims.windowHeight * 0.5);
-        ldDims.lv2Height = Math.round(ldDims.windowHeight * 0.65);
-        ldDims.hvHeight  = Math.round(ldDims.windowHeight * 1.0);
-    }
+    // All dimensions come from the backend — no multiplication factors here
+    ldDims.coreDia     = lyFront.D_core_tongue_width_mm || s.tongue        || ldDims.coreDia;
+    ldDims.windowHeight= lyFront.L_window_height_mm     || s.windowHeight   || ldDims.windowHeight;
+    ldDims.yokeHeight  = lyFront.yoke_depth_mm          || s.yokeHeight     || ldDims.yokeHeight;
+    ldDims.limbSpacing = lyFront.A_limb_center_to_center_mm || s.limbSpacingA || ldDims.limbSpacing;
 
-    ldDims.limbSpacing = ldDims.coreDia + ldDims.lv1Radial * 2 + ldDims.duct1 * 2 +
-                         ldDims.lv2Radial * 2 + ldDims.duct2 * 2 + ldDims.hvRadial * 2 + 20;
+    ldDims.lv1Radial = lySide.lv1_radial_depth_mm || rd.lv1 || ldDims.lv1Radial;
+    ldDims.lv2Radial = lySide.lv2_radial_depth_mm || rd.lv2 || ldDims.lv2Radial;
+    ldDims.hvRadial  = lySide.hv_radial_depth_mm  || rd.hv  || ldDims.hvRadial;
 
-    updateLayoutUI();
-    drawAllDiagrams();
+    // Winding heights: use window height as the authoritative value from backend
+    ldDims.lv1Height = s.windowHeight || ldDims.lv1Height;
+    ldDims.lv2Height = s.windowHeight || ldDims.lv2Height;
+    ldDims.hvHeight  = s.windowHeight || ldDims.hvHeight;
+
+    // Duct gaps: derived from the difference between consecutive winding OD inner dims
+    ldDims.duct1 = rd.duct1 || 5;
+    ldDims.duct2 = rd.duct2 || 10;
+
+    ldDims.coreFootInsulation = lySide.core_foot_with_insulation_mm || 10;
+    ldDims.numLimbs = lyTop.num_phases || 3;
+
+    updateLayoutUI(ldDims);
+    drawAllDiagrams(ldDims);
 }
 
-function updateLayoutUI() {
-    var d = ldDims;
+function updateLayoutUI(dims) {
+    let d = dims || ldDims;
     setText("ldCoreDia",  d.coreDia    + " mm");
     setText("ldLV1rad",   d.lv1Radial  + " mm");
     setText("ldDuct1",    d.duct1      + " mm");
@@ -724,189 +1625,406 @@ function updateLayoutUI() {
     setText("ldAxYoke",   d.yokeHeight + " mm");
 }
 
-function setText(id, val) {
-    var el = document.getElementById(id);
-    if (el) el.textContent = val;
-}
-
 /* ---- DRAW ALL THREE DIAGRAMS ---- */
-function drawAllDiagrams() {
-    drawFrontView();
-    drawSideElevation();
-    drawPlanView();
+function drawAllDiagrams(dims) {
+    let d = dims || ldDims;
+    drawFrontView(d);
+    drawSideElevation(d);
+    drawPlanView(d);
 }
 
 /* ==================================================
-   DIAGRAM 1 — FRONT VIEW (3-limb core + windings)
+   DIAGRAM 1 — TOP-DOWN PLAN VIEW (engineering drawing style)
+   Matches reference: outer frame with two window openings,
+   centre pillar, dimension labels D (yoke), A (width), L (window height)
    ================================================== */
-function drawFrontView() {
-    var canvas = document.getElementById("canvasFront");
+function drawFrontView(d) {
+    d = d || ldDims;
+    let canvas = document.getElementById("canvasFront");
     if (!canvas) return;
-    var ctx = canvas.getContext("2d");
-    var W = canvas.width, H = canvas.height;
+    let ctx = canvas.getContext("2d");
+    let W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
 
-    // Background
-    ctx.fillStyle = "#1a1a1a";
+
+    /* ── Computed dimensions (all in mm) ──────────────────────────── */
+    // D = yoke depth (top/bottom frame thickness)
+    let D_mm = d.yokeHeight || 95;
+    // A = overall width (limb spacing between outer limbs + core diameter each side)
+    let A_mm = d.limbSpacing + d.coreDia;
+    // L = window height (opening height inside the frame)
+    let L_mm = d.windowHeight || 210;
+    // Window width (opening inside frame = limb spacing - coreDia)
+    let W_mm = Math.max(30, d.limbSpacing - d.coreDia);
+    // Centre pillar width = coreDia
+    let P_mm = d.coreDia;
+    // Total height of the frame = D + L + D
+    let TH_mm = D_mm + L_mm + D_mm;
+
+    /* ── Scale to fit canvas with comfortable margins ─────────────── */
+    let marginLeft = 80, marginRight = 60, marginTop = 52, marginBottom = 52;
+    let drawW = W - marginLeft - marginRight;
+    let drawH = H - marginTop - marginBottom;
+
+    let scaleX = drawW / A_mm;
+    let scaleY = drawH / TH_mm;
+    let sc = Math.min(scaleX, scaleY);
+
+    // Rendered sizes (pixels)
+    let rA  = A_mm  * sc;   // total outer width
+    let rTH = TH_mm * sc;   // total outer height
+    let rD  = D_mm  * sc;   // yoke band thickness
+    let rL  = L_mm  * sc;   // window opening height
+    let rW  = W_mm  * sc;   // window opening width (each)
+    let rP  = P_mm  * sc;   // centre pillar width
+
+    // Origin: top-left of the outer frame, centred in available area
+    let ox = marginLeft + (drawW - rA) / 2;
+    let oy = marginTop  + (drawH - rTH) / 2;
+
+    /* ── Background ───────────────────────────────────────────────── */
+    // Subtle gradient to echo the dark-mode aesthetic of the app
+    let bgGrad = ctx.createLinearGradient(0, 0, W, H);
+    bgGrad.addColorStop(0,   "#1c1c28");
+    bgGrad.addColorStop(1,   "#14141e");
+    ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, W, H);
 
-    var d = ldDims;
-    var scale = Math.min(
-        (W * 0.72) / (d.limbSpacing * 2 + d.coreDia),
-        (H * 0.62) / (d.yokeHeight * 2 + d.hvHeight)
-    );
-
-    var totalW = (d.limbSpacing * 2 + d.coreDia) * scale;
-    var totalH = (d.yokeHeight * 2 + d.hvHeight) * scale;
-    var ox = (W - totalW) / 2;
-    var oy = (H - totalH) / 2;
-
-    var yokeH  = d.yokeHeight * scale;
-    var winH   = d.hvHeight   * scale;
-    var coreW  = d.coreDia    * scale;
-    var limbSp = d.limbSpacing * scale;
-
-    // Limb x-centres
-    var cx = [ox + coreW / 2, ox + coreW / 2 + limbSp, ox + coreW / 2 + limbSp * 2];
-
-    // --- Top yoke ---
-    ctx.fillStyle = "#5a5a6a";
-    ctx.strokeStyle = "#888";
-    ctx.lineWidth = 1;
-    ctx.fillRect(ox, oy, totalW, yokeH);
-    ctx.strokeRect(ox, oy, totalW, yokeH);
-    dimLabel(ctx, ox + totalW / 2, oy + yokeH / 2, "Top Yoke = " + d.yokeHeight + " mm", "#ccc", true);
-
-    // --- Bottom yoke ---
-    var byY = oy + yokeH + winH;
-    ctx.fillStyle = "#5a5a6a";
-    ctx.fillRect(ox, byY, totalW, yokeH);
-    ctx.strokeRect(ox, byY, totalW, yokeH);
-    dimLabel(ctx, ox + totalW / 2, byY + yokeH / 2, "Bottom Yoke = " + d.yokeHeight + " mm", "#ccc", true);
-
-    // --- Core limbs + windings ---
-    for (var i = 0; i < 3; i++) {
-        var lx = cx[i] - coreW / 2;
-        var ly = oy + yokeH;
-
-        // Core limb (dark grey)
-        ctx.fillStyle = "#4a4a5a";
-        ctx.fillRect(lx, ly, coreW, winH);
-        ctx.strokeStyle = "#777";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(lx, ly, coreW, winH);
-
-        // LV1 winding (gold/amber) — innermost
-        var lv1t  = d.lv1Radial  * scale;
-        var duct1t = d.duct1 * scale;
-        var lv2t  = d.lv2Radial  * scale;
-        var duct2t = d.duct2 * scale;
-        var hvt   = d.hvRadial   * scale;
-
-        var lv1H = d.lv1Height * scale;
-        var lv2H = d.lv2Height * scale;
-        var hvH  = d.hvHeight  * scale;
-
-        var lv1y = ly + (winH - lv1H) / 2;
-        drawCoil(ctx, lx - lv1t, lv1y, lv1t, lv1H, "#c8922a", "#f0b840", "LV1");
-
-        // Mirror right side
-        drawCoil(ctx, lx + coreW, lv1y, lv1t, lv1H, "#c8922a", "#f0b840", "");
-
-        // LV2 winding (lighter gold)
-        var lv2x = lx - lv1t - duct1t - lv2t;
-        var lv2y = ly + (winH - lv2H) / 2;
-        drawCoil(ctx, lv2x, lv2y, lv2t, lv2H, "#8a6a20", "#c09030", "LV2");
-        drawCoil(ctx, lx + coreW + lv1t + duct1t, lv2y, lv2t, lv2H, "#8a6a20", "#c09030", "");
-
-        // HV winding (blue)
-        var hvx = lv2x - duct2t - hvt;
-        var hvy = ly + (winH - hvH) / 2;
-        drawCoil(ctx, hvx, hvy, hvt, hvH, "#1a3a6a", "#2860b0", "HV");
-        drawCoil(ctx, lx + coreW + lv1t + duct1t + lv2t + duct2t, hvy, hvt, hvH, "#1a3a6a", "#2860b0", "");
+    /* ── Helper: draw filled+stroked rect with an optional gradient ── */
+    function solidRect(x, y, w, h, fillCol, strokeCol, lw) {
+        ctx.fillStyle   = fillCol;
+        ctx.strokeStyle = strokeCol || "#8899bb";
+        ctx.lineWidth   = lw || 1.5;
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeRect(x, y, w, h);
     }
 
-    // Window height arrow + label on the right
-    var arrowX = ox + totalW + 20;
-    var winTop = oy + yokeH;
-    var winBot = winTop + winH;
-    drawArrow(ctx, arrowX, winTop, arrowX, winBot, "#aaa");
-    dimLabel(ctx, arrowX + 4, (winTop + winBot) / 2, d.hvHeight + " mm", "#aaa", false, true);
+    /* ── Core frame parts ─────────────────────────────────────────── */
+    // We draw the frame as a thick outer border with two window cut-outs.
+    // Actual geometry (all pixel coords):
+    //
+    //  ox,oy ┌──────────────────────────────┐ ox+rA, oy
+    //        │         TOP YOKE (rD)         │
+    //        ├────┬──────────┬──────────┬───┤ oy+rD
+    //        │ LT │ WINDOW 1 │ PILLAR   │RT │       (LT=left wall, RT=right wall)
+    //        │    │          │  (rP)    │   │
+    //        ├────┴──────────┴──────────┴───┤ oy+rD+rL
+    //        │        BOTTOM YOKE (rD)       │
+    //        └──────────────────────────────┘ oy+rTH
 
-    // Total height label on left
-    drawArrow(ctx, ox - 20, oy, ox - 20, oy + totalH, "#aaa");
-    dimLabel(ctx, ox - 22, oy + totalH / 2, (d.yokeHeight * 2 + d.hvHeight) + " mm", "#aaa", false, true, true);
-
-    // Width label at bottom
-    drawArrow(ctx, ox, oy + totalH + 18, ox + totalW, oy + totalH + 18, "#aaa");
-    dimLabel(ctx, ox + totalW / 2, oy + totalH + 26, d.limbSpacing + " mm", "#aaa", true);
-
-    // OCTC to cover label (top)
-    dimLabel(ctx, ox + coreW / 2 + 60, oy - 12, "OCTC to cover = 100 mm", "#888", true);
-}
-
-function drawCoil(ctx, x, y, w, h, colDark, colLight, label) {
-    // Main body
-    ctx.fillStyle = colLight;
-    ctx.fillRect(x, y, w, h);
-    ctx.strokeStyle = colDark;
-    ctx.lineWidth = 1;
-    ctx.strokeRect(x, y, w, h);
-
-    // Horizontal winding lines
-    ctx.strokeStyle = colDark;
-    ctx.lineWidth = 0.5;
-    var step = Math.max(4, h / 18);
-    for (var i = step; i < h - 1; i += step) {
-        ctx.beginPath();
-        ctx.moveTo(x, y + i);
-        ctx.lineTo(x + w, y + i);
-        ctx.stroke();
+    // Yoke gradient — warm steel
+    function yokeGrad(x, y, w, h) {
+        let g = ctx.createLinearGradient(x, y, x, y + h);
+        g.addColorStop(0,   "#5e6278");
+        g.addColorStop(0.4, "#6e7390");
+        g.addColorStop(1,   "#4a4e62");
+        return g;
     }
 
-    // Label
-    if (label) {
+    // Side-wall / pillar gradient — slightly darker
+    function pillarGrad(x, y, w, h) {
+        let g = ctx.createLinearGradient(x, y, x + w, y);
+        g.addColorStop(0,   "#4e5268");
+        g.addColorStop(0.5, "#606480");
+        g.addColorStop(1,   "#4e5268");
+        return g;
+    }
+
+    // Window opening — inner void, very dark with a subtle inner glow
+    function windowFill(x, y, w, h) {
+        let g = ctx.createRadialGradient(x + w/2, y + h/2, 2, x + w/2, y + h/2, Math.max(w, h) * 0.6);
+        g.addColorStop(0,   "#2a2d3e");
+        g.addColorStop(1,   "#1a1c28");
+        ctx.fillStyle = g;
+        ctx.fillRect(x, y, w, h);
+    }
+
+    // ── Compute left-wall width and right-wall width ───────────────
+    // Total inner span = rA - left_wall - right_wall = window1 + pillar + window2
+    // By symmetry: left_wall = right_wall = (rA - rW*2 - rP) / 2
+    let sideW = (rA - rW * 2 - rP) / 2;
+
+    let winY  = oy + rD;          // top of window openings
+    let winH  = rL;               // height of window openings
+
+    // ── Top yoke ──
+    ctx.fillStyle   = yokeGrad(ox, oy, rA, rD);
+    ctx.fillRect(ox, oy, rA, rD);
+
+    // ── Bottom yoke ──
+    let byY = oy + rD + rL;
+    ctx.fillStyle = yokeGrad(ox, byY, rA, rD);
+    ctx.fillRect(ox, byY, rA, rD);
+
+    // ── Left side wall ──
+    ctx.fillStyle = pillarGrad(ox, winY, sideW, winH);
+    ctx.fillRect(ox, winY, sideW, winH);
+
+    // ── Right side wall ──
+    ctx.fillStyle = pillarGrad(ox + sideW + rW * 2 + rP, winY, sideW, winH);
+    ctx.fillRect(ox + sideW + rW * 2 + rP, winY, sideW, winH);
+
+    // ── Centre pillar ──
+    ctx.fillStyle = pillarGrad(ox + sideW + rW, winY, rP, winH);
+    ctx.fillRect(ox + sideW + rW, winY, rP, winH);
+
+    // ── Window openings (cut-outs) ──
+    windowFill(ox + sideW, winY, rW, winH);
+    windowFill(ox + sideW + rW + rP, winY, rW, winH);
+
+    // ── Stroke the full outer frame ──
+    ctx.strokeStyle = "#8899cc";
+    ctx.lineWidth   = 2;
+    ctx.strokeRect(ox, oy, rA, rTH);
+
+    // ── Inner horizontal lines (top & bottom of window zone) ──
+    ctx.strokeStyle = "#7788aa";
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(ox, oy + rD); ctx.lineTo(ox + rA, oy + rD);
+    ctx.moveTo(ox, byY);     ctx.lineTo(ox + rA, byY);
+    ctx.stroke();
+
+    // ── Centre pillar vertical edges ──
+    ctx.strokeStyle = "#7788aa";
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(ox + sideW + rW, winY);         ctx.lineTo(ox + sideW + rW, winY + winH);
+    ctx.moveTo(ox + sideW + rW + rP, winY);    ctx.lineTo(ox + sideW + rW + rP, winY + winH);
+    ctx.stroke();
+
+    // ── Side-wall edges ──
+    ctx.strokeStyle = "#667799";
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(ox + sideW, winY);              ctx.lineTo(ox + sideW, winY + winH);
+    ctx.moveTo(ox + sideW + rW * 2 + rP, winY); ctx.lineTo(ox + sideW + rW * 2 + rP, winY + winH);
+    ctx.stroke();
+
+    // ── Diagonal cross-hatch on yokes (engineering convention) ──
+    function hatchRect(x, y, w, h, step, ang) {
         ctx.save();
-        ctx.fillStyle = "#fff";
-        ctx.font = "bold 9px Arial";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        if (h > 30) {
-            ctx.translate(x + w / 2, y + h / 2);
-            ctx.rotate(-Math.PI / 2);
-            ctx.fillText(label, 0, 0);
+        ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+        ctx.strokeStyle = "rgba(150,165,200,0.12)";
+        ctx.lineWidth   = 0.8;
+        let diag = Math.sqrt(w * w + h * h);
+        for (let t = -diag; t < diag * 2; t += step) {
+            ctx.beginPath();
+            if (ang === 45) {
+                ctx.moveTo(x + t, y);
+                ctx.lineTo(x + t + h, y + h);
+            } else {
+                ctx.moveTo(x + t + h, y);
+                ctx.lineTo(x + t, y + h);
+            }
+            ctx.stroke();
         }
         ctx.restore();
     }
+    hatchRect(ox, oy, rA, rD, 12, 45);
+    hatchRect(ox, byY, rA, rD, 12, 45);
+    hatchRect(ox, winY, sideW, winH, 12, 45);
+    hatchRect(ox + sideW + rW * 2 + rP, winY, sideW, winH, 12, 45);
+    hatchRect(ox + sideW + rW, winY, rP, winH, 12, -45);
+
+    /* ── 3-D perspective lines (subtle edge suggestion) ─────────── */
+    let depthX = 18, depthY = -16;
+    function perspEdge(x1, y1, x2, y2) {
+        ctx.save();
+        ctx.strokeStyle = "rgba(160,175,210,0.22)";
+        ctx.lineWidth   = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x1 + depthX, y1 + depthY);
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 + depthX, y2 + depthY);
+        ctx.stroke();
+        ctx.restore();
+    }
+    // Top-edge corners
+    perspEdge(ox,        oy,  ox + rA, oy);
+    // Top of pillar top face
+    perspEdge(ox + sideW + rW, winY, ox + sideW + rW + rP, winY);
+
+    // Connect top perspective points with a line
+    ctx.save();
+    ctx.strokeStyle = "rgba(160,175,210,0.22)";
+    ctx.lineWidth   = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(ox + depthX,      oy + depthY);
+    ctx.lineTo(ox + rA + depthX, oy + depthY);
+    ctx.stroke();
+    ctx.restore();
+
+    /* ── DIMENSION ANNOTATIONS ────────────────────────────────────── */
+    let ANNOT  = "#c8d4ee";
+    let ANNOT2 = "#8a9bc0";
+
+    function dimLine(x1, y1, x2, y2) {
+        ctx.strokeStyle = ANNOT2;
+        ctx.lineWidth   = 1;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+        ctx.stroke();
+        // Arrowheads
+        let ang = Math.atan2(y2 - y1, x2 - x1);
+        let as  = 7;
+        [{ x: x1, y: y1, a: ang + Math.PI }, { x: x2, y: y2, a: ang }].forEach(function(p) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p.x - as * Math.cos(p.a - 0.4), p.y - as * Math.sin(p.a - 0.4));
+            ctx.lineTo(p.x - as * Math.cos(p.a + 0.4), p.y - as * Math.sin(p.a + 0.4));
+            ctx.closePath();
+            ctx.fillStyle = ANNOT2;
+            ctx.fill();
+        });
+    }
+
+    function extLine(x1, y1, x2, y2) {
+        // Extension line (thin, dashed)
+        ctx.save();
+        ctx.strokeStyle = "rgba(140,160,200,0.45)";
+        ctx.lineWidth   = 0.8;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    function labelText(txt, x, y, align, baseline, size, bold) {
+        ctx.fillStyle    = ANNOT;
+        ctx.font         = (bold ? "bold " : "") + (size || 11) + "px 'Arial', sans-serif";
+        ctx.textAlign    = align    || "center";
+        ctx.textBaseline = baseline || "middle";
+        ctx.setLineDash([]);
+        ctx.fillText(txt, x, y);
+    }
+
+    function dimBox(txt, x, y) {
+        // Small white-on-dark box for the dimension value
+        ctx.font = "bold 12px Arial";
+        let tw = ctx.measureText(txt).width + 10;
+        let bh = 18;
+        ctx.fillStyle   = "rgba(20,22,36,0.82)";
+        ctx.strokeStyle = "rgba(140,160,210,0.45)";
+        ctx.lineWidth   = 0.8;
+        ctx.setLineDash([]);
+        roundRect(ctx, x - tw / 2, y - bh / 2, tw, bh, 3);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle    = "#dde6ff";
+        ctx.font         = "bold 12px Arial";
+        ctx.textAlign    = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(txt, x, y);
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+    }
+
+    /* ── D = yoke thickness (top, annotated top-right with leader) ── */
+    // Leader from top-right corner diagonally
+    let dLeadX1 = ox + rA - sideW / 2;
+    let dLeadY1 = oy + rD / 2;
+    let dLeadX2 = ox + rA + 38;
+    let dLeadY2 = oy - 22;
+    extLine(dLeadX1, dLeadY1, dLeadX2, dLeadY2);
+    ctx.save();
+    ctx.strokeStyle = ANNOT2; ctx.lineWidth = 1; ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(dLeadX2, dLeadY2); ctx.lineTo(dLeadX2 + 30, dLeadY2);
+    ctx.stroke();
+    ctx.restore();
+    labelText("D = " + D_mm + " mm", dLeadX2 + 15, dLeadY2 - 7, "center", "bottom", 11, true);
+
+    /* ── A = total width — annotated below the bottom yoke ───────── */
+    let aY = oy + rTH + 28;
+    extLine(ox,        oy + rTH, ox,        aY + 6);
+    extLine(ox + rA,   oy + rTH, ox + rA,   aY + 6);
+    dimLine(ox, aY, ox + rA, aY);
+    dimBox("A = " + A_mm + " mm", ox + rA / 2, aY);
+
+    /* ── L = window height — annotated to the left ───────────────── */
+    let lX = ox - 30;
+    extLine(ox, winY,       lX - 6, winY);
+    extLine(ox, winY + winH, lX - 6, winY + winH);
+    dimLine(lX, winY, lX, winY + winH);
+    dimBox("L = " + L_mm + " mm", lX - 2, winY + winH / 2);
+
+    /* ── Window width label (inside the left window) ─────────────── */
+    if (rW > 40) {
+        labelText(W_mm + " mm", ox + sideW + rW / 2, winY + winH / 2, "center", "middle", 10, false);
+    }
+
+    /* ── Centre pillar label ──────────────────────────────────────── */
+    if (rP > 22) {
+        ctx.save();
+        ctx.fillStyle    = "rgba(200,214,240,0.75)";
+        ctx.font         = "10px Arial";
+        ctx.textAlign    = "center";
+        ctx.textBaseline = "middle";
+        ctx.translate(ox + sideW + rW + rP / 2, winY + winH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText("Core Ø " + d.coreDia + " mm", 0, 0);
+        ctx.restore();
+    }
+
+    /* ── Overall height label (right side) ───────────────────────── */
+    let hX = ox + rA + 54;
+    extLine(ox + rA, oy,        hX + 6, oy);
+    extLine(ox + rA, oy + rTH, hX + 6, oy + rTH);
+    dimLine(hX, oy, hX, oy + rTH);
+    labelText((D_mm * 2 + L_mm) + " mm", hX + 8, oy + rTH / 2, "left", "middle", 10, false);
+
+    /* ── Title label inside the drawing ─────────────────────────── */
+    ctx.fillStyle    = "rgba(180,195,230,0.45)";
+    ctx.font         = "10px Arial";
+    ctx.textAlign    = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText("CORE PLAN VIEW", ox + rA / 2, oy + 4);
 }
 
 /* ==================================================
    DIAGRAM 2 — SIDE ELEVATION (core stack with yoke labels)
    ================================================== */
-function drawSideElevation() {
-    var canvas = document.getElementById("canvasSide");
+function drawSideElevation(d) {
+    d = d || ldDims;
+    let canvas = document.getElementById("canvasSide");
     if (!canvas) return;
-    var ctx = canvas.getContext("2d");
-    var W = canvas.width, H = canvas.height;
+    let ctx = canvas.getContext("2d");
+    let W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = "#1a1a1a";
     ctx.fillRect(0, 0, W, H);
 
-    var d = ldDims;
-    var totalH_mm = d.yokeHeight + d.windowHeight + d.yokeHeight + d.coreFootInsulation;
-    var scale = (H * 0.72) / totalH_mm;
-    var coreW = d.coreDia * scale * 0.9;
+    let totalH_mm = d.yokeHeight + d.windowHeight + d.yokeHeight + d.coreFootInsulation;
+    let scale = (H * 0.72) / totalH_mm;
+    let coreW = d.coreDia * scale * 0.9;
 
-    var ox = W * 0.2;
-    var oy = H * 0.1;
+    let ox = W * 0.2;
+    let oy = H * 0.1;
 
-    var topYokeH  = d.yokeHeight * scale;
-    var winH      = d.windowHeight * scale;
-    var botYokeH  = d.yokeHeight * scale;
-    var footH     = d.coreFootInsulation * scale;
+    let topYokeH  = d.yokeHeight * scale;
+    let winH      = d.windowHeight * scale;
+    let botYokeH  = d.yokeHeight * scale;
+    let footH     = d.coreFootInsulation * scale;
 
     // OCTC circle at top
-    var circR = 10;
+    let circR = 10;
     ctx.strokeStyle = "#888";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
@@ -921,27 +2039,27 @@ function drawSideElevation() {
     ctx.strokeRect(ox, oy, coreW, topYokeH);
 
     // Window (core limb visible as a narrower rect)
-    var limbW = coreW * 0.7;
-    var limbX = ox + (coreW - limbW) / 2;
+    let limbW = coreW * 0.7;
+    let limbX = ox + (coreW - limbW) / 2;
     ctx.fillStyle = "#3a3a4a";
     ctx.fillRect(limbX, oy + topYokeH, limbW, winH);
     ctx.strokeRect(limbX, oy + topYokeH, limbW, winH);
 
     // Bottom yoke
-    var byY = oy + topYokeH + winH;
+    let byY = oy + topYokeH + winH;
     ctx.fillStyle = "#5a5a6a";
     ctx.fillRect(ox, byY, coreW, botYokeH);
     ctx.strokeRect(ox, byY, coreW, botYokeH);
 
     // Core foot
-    var footY = byY + botYokeH;
+    let footY = byY + botYokeH;
     ctx.fillStyle = "#4a4a5a";
     ctx.fillRect(ox - 8, footY, coreW + 16, footH);
     ctx.strokeRect(ox - 8, footY, coreW + 16, footH);
 
     // Dimension labels on the right
-    var lx = ox + coreW + 16;
-    var arX = lx + 60;
+    let lx = ox + coreW + 16;
+    let arX = lx + 60;
 
     annotateRight(ctx, lx, oy - circR * 2 - 4, oy, "OCTC to cover = 100 mm");
     annotateRight(ctx, lx, oy, oy + topYokeH, "Top yoke = " + d.yokeHeight + " mm");
@@ -951,7 +2069,7 @@ function drawSideElevation() {
 }
 
 function annotateRight(ctx, lx, y1, y2, text) {
-    var mx = (y1 + y2) / 2;
+    let mx = (y1 + y2) / 2;
     ctx.strokeStyle = "#555";
     ctx.lineWidth = 1;
     // Horizontal tick from edge to label line
@@ -971,33 +2089,33 @@ function annotateRight(ctx, lx, y1, y2, text) {
 /* ==================================================
    DIAGRAM 3 — PLAN VIEW (top-down 3-limb footprint)
    ================================================== */
-function drawPlanView() {
-    var canvas = document.getElementById("canvasTop");
+function drawPlanView(d) {
+    d = d || ldDims;
+    let canvas = document.getElementById("canvasTop");
     if (!canvas) return;
-    var ctx = canvas.getContext("2d");
-    var W = canvas.width, H = canvas.height;
+    let ctx = canvas.getContext("2d");
+    let W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
     ctx.fillStyle = "#1a1a1a";
     ctx.fillRect(0, 0, W, H);
 
-    var d = ldDims;
 
     // Plan: total width = 2 * limbSpacing + coreDia + 2*margin
-    var margin = 50; // mm each side
-    var totalW_mm = d.limbSpacing * 2 + d.coreDia + margin * 2;
+    let margin = 50; // mm each side
+    let totalW_mm = d.limbSpacing * 2 + d.coreDia + margin * 2;
     // Total depth = coreDia + 2*hvRadial*2 + margin*2 (winding depth front+back) + margins
-    var windingDepth = d.hvRadial * 2 + d.duct2 * 2 + d.lv2Radial * 2 + d.duct1 * 2 + d.lv1Radial * 2 + d.coreDia;
-    var totalD_mm = windingDepth + margin * 2 + 20;
+    let windingDepth = d.hvRadial * 2 + d.duct2 * 2 + d.lv2Radial * 2 + d.duct1 * 2 + d.lv1Radial * 2 + d.coreDia;
+    let totalD_mm = windingDepth + margin * 2 + 20;
 
-    var scale = Math.min((W * 0.82) / totalW_mm, (H * 0.72) / totalD_mm);
+    let scale = Math.min((W * 0.82) / totalW_mm, (H * 0.72) / totalD_mm);
 
-    var ox = (W - totalW_mm * scale) / 2;
-    var oy = (H - totalD_mm * scale) / 2;
+    let ox = (W - totalW_mm * scale) / 2;
+    let oy = (H - totalD_mm * scale) / 2;
 
-    var marginS  = margin * scale;
-    var limbSpS  = d.limbSpacing * scale;
-    var coreDiaS = d.coreDia * scale;
-    var windDpS  = windingDepth * scale;
+    let marginS  = margin * scale;
+    let limbSpS  = d.limbSpacing * scale;
+    let coreDiaS = d.coreDia * scale;
+    let windDpS  = windingDepth * scale;
 
     // Outer frame
     ctx.strokeStyle = "#555";
@@ -1005,20 +2123,20 @@ function drawPlanView() {
     ctx.strokeRect(ox, oy, totalW_mm * scale, totalD_mm * scale);
 
     // 3 limb squares + windings
-    var limbs = [
+    let limbs = [
         ox + marginS,
         ox + marginS + limbSpS,
         ox + marginS + limbSpS * 2
     ];
 
-    var depthOffset = (totalD_mm * scale - windDpS) / 2;
+    let depthOffset = (totalD_mm * scale - windDpS) / 2;
 
-    for (var i = 0; i < 3; i++) {
-        var lx = limbs[i];
-        var topY = oy + depthOffset;
+    for (let i = 0; i < 3; i++) {
+        let lx = limbs[i];
+        let topY = oy + depthOffset;
 
         // HV winding (outermost — blue)
-        var hvD = d.hvRadial * scale;
+        let hvD = d.hvRadial * scale;
         ctx.fillStyle = "rgba(40,96,176,0.4)";
         ctx.strokeStyle = "#2860b0";
         ctx.lineWidth = 1;
@@ -1030,20 +2148,20 @@ function drawPlanView() {
                        windDpS);
 
         // LV2 winding
-        var lv2S = d.lv2Radial * scale;
-        var lv2innerW = coreDiaS + (d.duct1 * scale + d.lv1Radial * scale) * 2;
-        var lv2innerH = windDpS - hvD * 2 - d.duct2 * scale * 2;
+        let lv2S = d.lv2Radial * scale;
+        let lv2innerW = coreDiaS + (d.duct1 * scale + d.lv1Radial * scale) * 2;
+        let lv2innerH = windDpS - hvD * 2 - d.duct2 * scale * 2;
         ctx.fillStyle = "rgba(180,140,40,0.4)";
         ctx.strokeStyle = "#c09030";
-        var lv2topY = topY + hvD + d.duct2 * scale;
+        let lv2topY = topY + hvD + d.duct2 * scale;
         ctx.fillRect(lx - d.duct1 * scale - d.lv1Radial * scale - lv2S, lv2topY,
                      lv2innerW + lv2S * 2, lv2innerH);
         ctx.strokeRect(lx - d.duct1 * scale - d.lv1Radial * scale - lv2S, lv2topY,
                        lv2innerW + lv2S * 2, lv2innerH);
 
         // LV1 winding
-        var lv1S = d.lv1Radial * scale;
-        var lv1topY = lv2topY + lv2S + d.duct1 * scale;
+        let lv1S = d.lv1Radial * scale;
+        let lv1topY = lv2topY + lv2S + d.duct1 * scale;
         ctx.fillStyle = "rgba(200,146,42,0.5)";
         ctx.strokeStyle = "#f0b840";
         ctx.fillRect(lx - lv1S, lv1topY, coreDiaS + lv1S * 2, windDpS - (hvD + d.duct2 * scale + lv2S + d.duct1 * scale) * 2);
@@ -1057,13 +2175,13 @@ function drawPlanView() {
     }
 
     // Limb spacing dimension at top
-    var dimY = oy + depthOffset - 18;
+    let dimY = oy + depthOffset - 18;
     ctx.strokeStyle = "#666";
     ctx.lineWidth = 1;
     // Gap markers between limb centres
-    for (var j = 0; j < 2; j++) {
-        var lc1 = limbs[j] + coreDiaS / 2;
-        var lc2 = limbs[j + 1] + coreDiaS / 2;
+    for (let j = 0; j < 2; j++) {
+        let lc1 = limbs[j] + coreDiaS / 2;
+        let lc2 = limbs[j + 1] + coreDiaS / 2;
         drawArrow(ctx, lc1, dimY, lc2, dimY, "#888");
         dimLabel(ctx, (lc1 + lc2) / 2, dimY - 8, d.limbSpacing + " mm", "#aaa", true);
     }
@@ -1072,12 +2190,12 @@ function drawPlanView() {
     dimLabel(ctx, ox + marginS / 2, oy + totalD_mm * scale / 2, d.coreDia + " mm\n(margin)", "#888", true);
 
     // Depth dimension on right
-    var rightX = ox + totalW_mm * scale + 18;
+    let rightX = ox + totalW_mm * scale + 18;
     drawArrow(ctx, rightX, oy + depthOffset, rightX, oy + depthOffset + windDpS, "#888");
     dimLabel(ctx, rightX + 4, oy + depthOffset + windDpS / 2, windingDepth + " mm", "#aaa", false, true);
 
     // Bottom frame width
-    var botY = oy + totalD_mm * scale + 16;
+    let botY = oy + totalD_mm * scale + 16;
     drawArrow(ctx, ox, botY, ox + totalW_mm * scale, botY, "#888");
     dimLabel(ctx, ox + totalW_mm * scale / 2, botY + 10, totalW_mm + " mm", "#aaa", true);
 
@@ -1086,14 +2204,14 @@ function drawPlanView() {
     ctx.font = "9px Arial";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    var mid1x = limbs[0] + coreDiaS + (limbs[1] - limbs[0] - coreDiaS) / 2;
-    var mid2x = limbs[1] + coreDiaS + (limbs[2] - limbs[1] - coreDiaS) / 2;
-    var midY  = oy + totalD_mm * scale / 2;
+    let mid1x = limbs[0] + coreDiaS + (limbs[1] - limbs[0] - coreDiaS) / 2;
+    let mid2x = limbs[1] + coreDiaS + (limbs[2] - limbs[1] - coreDiaS) / 2;
+    let midY  = oy + totalD_mm * scale / 2;
     ctx.fillText(d.duct1 + " mm", mid1x, midY);
     ctx.fillText(d.duct1 + " mm", mid2x, midY);
 
     // Side margins label
-    var sideMarginLabel = margin + " mm";
+    let sideMarginLabel = margin + " mm";
     ctx.fillText(sideMarginLabel, ox + marginS / 2, midY);
     ctx.fillText(sideMarginLabel, ox + totalW_mm * scale - marginS / 2, midY);
 
@@ -1108,8 +2226,8 @@ function drawArrow(ctx, x1, y1, x2, y2, color) {
     ctx.beginPath();
     ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
     ctx.stroke();
-    var angle = Math.atan2(y2 - y1, x2 - x1);
-    var as = 6;
+    let angle = Math.atan2(y2 - y1, x2 - x1);
+    let as = 6;
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x1 + as * Math.cos(angle + 2.8), y1 + as * Math.sin(angle + 2.8));
@@ -1128,63 +2246,56 @@ function drawArrow(ctx, x1, y1, x2, y2, color) {
 function dimLabel(ctx, x, y, text, color, centered, rightAligned, leftAligned) {
     ctx.fillStyle = color || "#aaa";
     ctx.font = "10px Arial";
-    if (centered)      ctx.textAlign = "center";
+    if (centered)          ctx.textAlign = "center";
     else if (rightAligned) ctx.textAlign = "right";
-    else if (leftAligned)  ctx.textAlign = "right";
-    else ctx.textAlign = "left";
+    else if (leftAligned)  ctx.textAlign = "left";   // was incorrectly "right"
+    else                   ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     ctx.fillText(text, x, y);
 }
 
-/* Draw on page load with default dims */
-(function() {
-    var checkCanvases = setInterval(function() {
-        if (document.getElementById("canvasFront")) {
-            clearInterval(checkCanvases);
-            drawAllDiagrams();
-            updateLayoutUI();
-        }
-    }, 100);
-})();
+/* Draw on page load — canvases are in the static HTML so they exist on DOMContentLoaded */
+document.addEventListener("DOMContentLoaded", function() {
+    drawAllDiagrams();
+    updateLayoutUI();
+});
 
-/* Redraw when Layout Design tab is clicked */
+/* Redraw when Layout Design tab becomes visible — draw directly after showPage()
+   has already removed 'hidden', no setTimeout needed */
 navItems.forEach(function(item) {
     if (item.getAttribute("data-page") === "layout-design") {
         item.addEventListener("click", function() {
-            setTimeout(function() { drawAllDiagrams(); }, 50);
+            drawAllDiagrams(ldDims);
         });
     }
 });
 
 /* ---- EXPORT BUTTONS ---- */
-var ldExportPdf = document.getElementById("ldExportPdf");
+const ldExportPdf = document.getElementById("ldExportPdf");
 if (ldExportPdf) {
     ldExportPdf.addEventListener("click", function() {
-        var bar = document.querySelector(".ld-export-bar");
-        if (bar) bar.style.display = "none";
-        window.print();
-        if (bar) bar.style.display = "";
+        printPage([".ld-export-bar"]);
     });
 }
 
-var ldExportSvg = document.getElementById("ldExportSvg");
+const ldExportSvg = document.getElementById("ldExportSvg");
 if (ldExportSvg) {
     ldExportSvg.addEventListener("click", function() {
         // Combine all 3 canvases into one SVG via data URLs
-        var canvases = ["canvasFront","canvasSide","canvasTop"];
-        var svgParts = ['<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="580">'];
-        var yOff = 0;
+        let canvases = ["canvasFront","canvasSide","canvasTop"];
+        let svgParts = ['<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="580">'];
+        let yOff = 0;
         canvases.forEach(function(id) {
-            var c = document.getElementById(id);
+            let c = document.getElementById(id);
             if (!c) return;
-            var dataUrl = c.toDataURL("image/png");
+            let dataUrl = c.toDataURL("image/png");
             svgParts.push('<image x="10" y="' + yOff + '" width="' + c.width + '" height="' + c.height + '" xlink:href="' + dataUrl + '"/>');
             yOff += c.height + 10;
         });
         svgParts.push('</svg>');
-        var blob = new Blob([svgParts.join("")], { type: "image/svg+xml" });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement("a");
+        let blob = new Blob([svgParts.join("")], { type: "image/svg+xml" });
+        let url = URL.createObjectURL(blob);
+        let a = document.createElement("a");
         a.href = url;
         a.download = "layout_design.svg";
         a.click();
@@ -1197,7 +2308,7 @@ if (ldExportSvg) {
    Based on Sara Consultants design steps
    ============================================= */
 
-var validationRules = {
+const validationRules = {
     ratedPower:      { min: 1,    max: 5000,  label: "Rated Power",           unit: "kVA" },
     frequency:       { min: 50,   max: 60,    label: "Frequency",             unit: "Hz" },
     fluxDensity:     { min: 0.8,  max: 1.75,  label: "Flux Density (B)",      unit: "T",
@@ -1216,45 +2327,45 @@ var validationRules = {
                        hint: "HV winding: typically 1.0–2.5 A/mm²." }
 };
 
-var validationMessages = {}; // fieldId → { type: 'error'|'warn'|'ok', text }
+let validationMessages = {}; // fieldId → { type: 'error'|'warn'|'ok', text }
 
 function getInputValue(id) {
-    var el = document.getElementById(id);
+    let el = document.getElementById(id);
     return el ? parseFloat(el.value) || 0 : 0;
 }
 function getSelectValue(id) {
-    var el = document.getElementById(id);
+    let el = document.getElementById(id);
     return el ? el.value : "";
 }
 
 /* ── Cross-field validation logic ─────────────────────────────── */
 function validateAllInputs() {
-    var msgs = {};
-    var sqrt3 = Math.sqrt(3);
+    let msgs = {};
+    let sqrt3 = Math.sqrt(3);
 
-    var ratedPower = getInputValue("ratedPower");
-    var freq       = getInputValue("frequency");
-    var B          = getInputValue("fluxDensity");
-    var lv1V       = getInputValue("lv1Voltage");
-    var lv2V       = getInputValue("lv2Voltage");
-    var hvV        = getInputValue("hvVoltage");
-    var lv1kva     = getInputValue("lv1kva");
-    var lv2kva     = getInputValue("lv2kva");
-    var hvkva      = getInputValue("hvkva");
-    var lv1cd      = getInputValue("lv1cd");
-    var lv2cd      = getInputValue("lv2cd");
-    var hvcd       = getInputValue("hvcd");
-    var lv1conn    = getSelectValue("lv1conn") === "Y" ? "Star" : "Delta";
-    var lv2conn    = getSelectValue("lv2conn") === "Y" ? "Star" : "Delta";
-    var hvconn     = getSelectValue("hvconn")  === "Y" ? "Star" : "Delta";
-    var lv1mat     = getSelectValue("lv1mat") === "AL" ? "Aluminium" : "Copper";
-    var lv2mat     = getSelectValue("lv2mat") === "AL" ? "Aluminium" : "Copper";
-    var hvmat      = getSelectValue("hvmat")  === "AL" ? "Aluminium" : "Copper";
+    let ratedPower = getInputValue("ratedPower");
+    let freq       = getInputValue("frequency");
+    let B          = getInputValue("fluxDensity");
+    let lv1V       = getInputValue("lv1Voltage");
+    let lv2V       = getInputValue("lv2Voltage");
+    let hvV        = getInputValue("hvVoltage");
+    let lv1kva     = getInputValue("lv1kva");
+    let lv2kva     = getInputValue("lv2kva");
+    let hvkva      = getInputValue("hvkva");
+    let lv1cd      = getInputValue("lv1cd");
+    let lv2cd      = getInputValue("lv2cd");
+    let hvcd       = getInputValue("hvcd");
+    let lv1conn    = toConnName(getSelectValue("lv1conn"));
+    let lv2conn    = toConnName(getSelectValue("lv2conn"));
+    let hvconn     = toConnName(getSelectValue("hvconn"));
+    let lv1mat     = getSelectValue("lv1mat") === "AL" ? "Aluminium" : "Copper";
+    let lv2mat     = getSelectValue("lv2mat") === "AL" ? "Aluminium" : "Copper";
+    let hvmat      = getSelectValue("hvmat")  === "AL" ? "Aluminium" : "Copper";
 
     // 1. Basic range checks
     Object.keys(validationRules).forEach(function(id) {
-        var rule = validationRules[id];
-        var val  = getInputValue(id);
+        let rule = validationRules[id];
+        let val  = getInputValue(id);
         if (!val || val === 0) {
             msgs[id] = { type: "error", text: rule.label + " is required." };
         } else if (val < rule.min || val > rule.max) {
@@ -1267,8 +2378,8 @@ function validateAllInputs() {
 
     // 2. KVA balance: LV1 + LV2 ≈ HV (within ±10%)
     if (lv1kva > 0 && lv2kva > 0 && hvkva > 0) {
-        var totalSec = lv1kva + lv2kva;
-        var diff = Math.abs(totalSec - hvkva) / hvkva;
+        let totalSec = lv1kva + lv2kva;
+        let diff = Math.abs(totalSec - hvkva) / hvkva;
         if (diff > 0.10) {
             msgs["hvkva"] = { type: "error",
                 text: "HV kVA (" + hvkva + ") should equal LV1 + LV2 kVA (" + totalSec + "). Difference: " + (diff * 100).toFixed(1) + "%." };
@@ -1287,7 +2398,7 @@ function validateAllInputs() {
     }
 
     // 3. Flux density vs insulation class
-    var insClass = getSelectValue("insulationClass");
+    let insClass = getSelectValue("insulationClass");
     if (B > 0 && insClass) {
         if (insClass === "F" || insClass === "E") {
             if (B > 1.6) {
@@ -1308,17 +2419,17 @@ function validateAllInputs() {
         { id: "hvcd",  mat: hvmat,  cur: hvcd  }
     ].forEach(function(w) {
         if (!w.mat || !w.cur) return;
-        var isCu = (w.mat === "Copper" || w.mat === "Cu");
-        if (isCu && w.cur > 3.5) {
+        let cu = isCu(w.mat);
+        if (cu && w.cur > 3.5) {
             msgs[w.id] = { type: "error",
                 text: "Current density " + w.cur + " A/mm² too high for Copper. Max recommended: 3.5 A/mm²." };
-        } else if (!isCu && w.cur > 2.5) {
+        } else if (!cu && w.cur > 2.5) {
             msgs[w.id] = { type: "error",
                 text: "Current density " + w.cur + " A/mm² too high for Aluminium. Max recommended: 2.5 A/mm²." };
-        } else if (isCu && w.cur < 1.0) {
+        } else if (cu && w.cur < 1.0) {
             msgs[w.id] = { type: "warn",
                 text: "Current density " + w.cur + " A/mm² is low for Copper. Winding will be oversized." };
-        } else if (!isCu && w.cur < 0.8) {
+        } else if (!cu && w.cur < 0.8) {
             msgs[w.id] = { type: "warn",
                 text: "Current density " + w.cur + " A/mm² is low for Aluminium. Winding will be oversized." };
         }
@@ -1334,39 +2445,22 @@ function validateAllInputs() {
             text: "LV2 voltage (" + lv2V + " V) is ≥ HV voltage (" + hvV + " V). Verify winding designation." };
     }
 
-    // 6. Volts/Turn estimate check
-    if (ratedPower > 0 && lv1V > 0) {
-        var k = (ratedPower <= 25) ? 0.45 : (ratedPower <= 100) ? 0.55 : 0.62;
-        var vtEst = k * Math.sqrt(ratedPower);
-        var lv1Phase = (lv1conn === "Star") ? lv1V / sqrt3 : lv1V;
-        var turnsEst = Math.round(lv1Phase / vtEst);
-        if (turnsEst < 10) {
-            msgs["lv1Voltage"] = msgs["lv1Voltage"] || { type: "warn",
-                text: "Very low estimated turns (~" + turnsEst + ") for LV1. Consider increasing voltage or reducing kVA." };
-        }
-    }
-
-    // 7. HV voltage BIL check
+    // 6. HV voltage BIL check
     if (hvV > 0) {
-        var bil;
-        if      (hvV <= 1000)  bil = "Not required (LV)";
-        else if (hvV <= 3300)  bil = "40 kVp (IS 2026)";
-        else if (hvV <= 6600)  bil = "60 kVp";
-        else if (hvV <= 11000) bil = "95 kVp";
-        else if (hvV <= 22000) bil = "150 kVp";
-        else                   bil = "250 kVp";
+        let bil = getBIL(hvV);
+        let bilDisplay = bil === "—" ? "Not required (LV)" : bil;
         if (!msgs["hvVoltage"] || msgs["hvVoltage"].type === "ok") {
-            msgs["hvVoltage"] = { type: "ok", text: "Recommended BIL: " + bil };
+            msgs["hvVoltage"] = { type: "ok", text: "Recommended BIL: " + bilDisplay };
         }
     }
 
     // 8. Vector group consistency
-    var vectorGroup = getSelectValue("vectorGroup");
+    let vectorGroup = getSelectValue("vectorGroup");
     if (vectorGroup && hvconn && lv1conn) {
-        var vgUpper = vectorGroup.toUpperCase();
-        var hvExpect = vgUpper[0];  // D or Y
-        var hvIsD = (hvconn === "Delta");
-        var hvIsY = (hvconn === "Star");
+        let vgUpper = vectorGroup.toUpperCase();
+        let hvExpect = vgUpper[0];  // D or Y
+        let hvIsD = (hvconn === "Delta");
+        let hvIsY = (hvconn === "Star");
         if ((hvExpect === "D" && !hvIsD) || (hvExpect === "Y" && !hvIsY)) {
             msgs["vectorGroup"] = { type: "warn",
                 text: "Vector group '" + vectorGroup + "' implies HV is " + (hvExpect === "D" ? "Delta" : "Star") + ", but HV connection is set to " + hvconn + "." };
@@ -1382,23 +2476,23 @@ function renderValidation(msgs) {
     document.querySelectorAll(".val-badge").forEach(function(el) { el.remove(); });
 
     Object.keys(msgs).forEach(function(id) {
-        var field = document.getElementById(id);
+        let field = document.getElementById(id);
         if (!field) return;
-        var msg = msgs[id];
-        var badge = document.createElement("div");
+        let msg = msgs[id];
+        let badge = document.createElement("div");
         badge.className = "val-badge val-" + msg.type;
         badge.textContent = msg.text;
-        var parent = field.parentNode;
+        let parent = field.parentNode;
         // Insert after field
         if (parent) {
-            var next = field.nextSibling;
+            let next = field.nextSibling;
             parent.insertBefore(badge, next);
         }
     });
 
     // Update run button state
-    var runBtn = document.getElementById("runCalcBtn");
-    var hasError = Object.values(msgs).some(function(m) { return m.type === "error"; });
+    let runBtn = document.getElementById("runCalcBtn");
+    let hasError = Object.values(msgs).some(function(m) { return m.type === "error"; });
     if (runBtn) {
         runBtn.disabled = hasError;
         runBtn.style.opacity = hasError ? "0.5" : "1";
@@ -1409,33 +2503,11 @@ function renderValidation(msgs) {
     return hasError;
 }
 
-/* ── Show a floating summary panel ───────────────────────────────── */
-function updateValidationSummary(msgs) {
-    var panel = document.getElementById("validationSummary");
-    if (!panel) return;
-    var errors = [], warnings = [];
-    Object.values(msgs).forEach(function(m) {
-        if (m.type === "error")   errors.push(m.text);
-        if (m.type === "warn")    warnings.push(m.text);
-    });
-
-    if (errors.length === 0 && warnings.length === 0) {
-        panel.innerHTML = '<div class="val-summary-ok">✓ All inputs valid — ready to calculate</div>';
-        panel.className = "val-summary-panel val-summary-clean";
-    } else {
-        var html = "";
-        errors.forEach(function(t)   { html += '<div class="val-sum-err">✕ ' + t + '</div>'; });
-        warnings.forEach(function(t) { html += '<div class="val-sum-warn">⚠ ' + t + '</div>'; });
-        panel.innerHTML = html;
-        panel.className = "val-summary-panel" + (errors.length ? " val-summary-dirty" : " val-summary-warn");
-    }
-}
-
 /* ── Touch tracking — only show errors for fields the user has interacted with ── */
-var touchedFields = {};   // fieldId → true once the user has left the field or changed a select
-var dirtyFields   = {};   // fieldId → true once the user has typed something (even if still focused)
+let touchedFields = {};   // fieldId → true once the user has left the field or changed a select
+let dirtyFields   = {};   // fieldId → true once the user has typed something (even if still focused)
 
-var valFields = [
+const valFields = [
     "ratedPower","frequency","fluxDensity",
     "lv1Voltage","lv2Voltage","hvVoltage",
     "lv1kva","lv2kva","hvkva",
@@ -1446,9 +2518,9 @@ var valFields = [
 ];
 
 valFields.forEach(function(id) {
-    var el = document.getElementById(id);
+    let el = document.getElementById(id);
     if (!el) return;
-    var isSelect = el.tagName === "SELECT";
+    let isSelect = el.tagName === "SELECT";
 
     if (isSelect) {
         // Selects: validate immediately when user picks a value
@@ -1485,14 +2557,14 @@ valFields.forEach(function(id) {
 
 /* Validate but only render badges for touched/dirty fields */
 function refreshValidation() {
-    var allMsgs = validateAllInputs();
+    let allMsgs = validateAllInputs();
 
     // Filter: only show messages for fields that have been interacted with
     // EXCEPTION: cross-field warnings (kva balance, vector group) shown
     // only if ALL involved fields are dirty
-    var visibleMsgs = {};
+    let visibleMsgs = {};
     Object.keys(allMsgs).forEach(function(id) {
-        var msg = allMsgs[id];
+        let msg = allMsgs[id];
 
         // Always show "ok" hints for dirty fields (not errors)
         if (msg.type === "ok" && dirtyFields[id]) {
@@ -1519,12 +2591,12 @@ function refreshValidation() {
 
     // Run button: disable only if there are actual errors in ALL messages
     // (not just visible ones — we don't want users to submit with hidden errors)
-    var totalErrors = Object.values(allMsgs).filter(function(m) { return m.type === "error"; });
-    var runBtn = document.getElementById("runCalcBtn");
+    let totalErrors = Object.values(allMsgs).filter(function(m) { return m.type === "error"; });
+    let runBtn = document.getElementById("runCalcBtn");
     if (runBtn) {
         // Only disable if at least one field has been touched AND there are errors
-        var anyTouched = Object.keys(touchedFields).length > 0;
-        var hasBlocker = anyTouched && totalErrors.length > 0;
+        let anyTouched = Object.keys(touchedFields).length > 0;
+        let hasBlocker = anyTouched && totalErrors.length > 0;
         runBtn.disabled = false; // always let them try — we'll validate on submit
         runBtn.style.opacity = "1";
         runBtn.style.cursor  = "pointer";
@@ -1534,17 +2606,17 @@ function refreshValidation() {
 
 /* ── Summary panel — only show touched field issues ─────────────── */
 function updateValidationSummary(msgs) {
-    var panel = document.getElementById("validationSummary");
+    let panel = document.getElementById("validationSummary");
     if (!panel) return;
 
-    var errors = [], warnings = [];
+    let errors = [], warnings = [];
     Object.values(msgs).forEach(function(m) {
         if (m.type === "error") errors.push(m.text);
         if (m.type === "warn")  warnings.push(m.text);
     });
 
     if (errors.length === 0 && warnings.length === 0) {
-        var anyTouched = Object.keys(touchedFields).length > 0 || Object.keys(dirtyFields).length > 0;
+        let anyTouched = Object.keys(touchedFields).length > 0 || Object.keys(dirtyFields).length > 0;
         if (anyTouched) {
             panel.innerHTML = '<div class="val-summary-ok">✓ Looking good — keep filling in the inputs</div>';
             panel.className = "val-summary-panel val-summary-clean";
@@ -1553,7 +2625,7 @@ function updateValidationSummary(msgs) {
             panel.className = "val-summary-panel";
         }
     } else {
-        var html = "";
+        let html = "";
         errors.forEach(function(t)   { html += '<div class="val-sum-err">✕ ' + t + '</div>'; });
         warnings.forEach(function(t) { html += '<div class="val-sum-warn">⚠ ' + t + '</div>'; });
         panel.innerHTML = html;
@@ -1569,13 +2641,13 @@ function handleSubmit() {
         dirtyFields[id]   = true;
     });
 
-    var allMsgs = validateAllInputs();
+    let allMsgs = validateAllInputs();
     renderValidation(allMsgs);
     updateValidationSummary(allMsgs);
 
-    var hasError = Object.values(allMsgs).some(function(m) { return m.type === "error"; });
+    let hasError = Object.values(allMsgs).some(function(m) { return m.type === "error"; });
     if (hasError) {
-        var panel = document.getElementById("validationSummary");
+        let panel = document.getElementById("validationSummary");
         if (panel) panel.scrollIntoView({ behavior: "smooth" });
         return;
     }
@@ -1591,7 +2663,7 @@ if (transformerForm) {
 }
 
 /* Also wire the button directly in case it's outside the form */
-var runCalcBtn = document.getElementById("runCalcBtn");
+const runCalcBtn = document.getElementById("runCalcBtn");
 if (runCalcBtn) {
     runCalcBtn.addEventListener("click", function(e) {
         // If inside a form, the form submit will fire — only handle if not
@@ -1604,9 +2676,53 @@ if (runCalcBtn) {
 
 /* Start fresh — no validation shown on load */
 (function() {
-    var panel = document.getElementById("validationSummary");
+    let panel = document.getElementById("validationSummary");
     if (panel) {
         panel.innerHTML = '<div style="color:#555;font-size:11px;">Fill in the inputs above — validation feedback will appear here as you go.</div>';
         panel.className = "val-summary-panel";
     }
+})();
+/* =============================================
+   CORE MATERIAL — live info note updater
+   Updates the hint text whenever dropdowns change
+   ============================================= */
+(function() {
+    let matSel   = document.getElementById("coreMaterialType");
+    let gradeSel = document.getElementById("coreGrade");
+    let noteEl   = document.getElementById("coreMaterialNoteText");
+
+    // Grade metadata lookup
+    let gradeInfo = {
+        "M4"    : { label: "M-4",    thick: "0.27 mm", stdLoss: "0.83 W/kg @ 1.5T" },
+        "M3"    : { label: "M-3",    thick: "0.23 mm", stdLoss: "0.67 W/kg @ 1.5T" },
+        "23ZDMH": { label: "23ZDMH", thick: "0.23 mm", stdLoss: "0.56 W/kg @ 1.5T" }
+    };
+
+    function updateNote() {
+        if (!matSel || !gradeSel || !noteEl) return;
+        let mat   = matSel.value;
+        let grade = gradeSel.value;
+        let isCrno = (mat === "CRNO");   // CRNO = low-loss; was legacy "Amorphous"
+        let dens   = isCrno ? "7.20 g/cc" : "7.65 g/cc";
+        let sf     = isCrno ? "0.84" : "0.96";
+        let gi     = gradeInfo[isCrno ? "23ZDMH" : grade] || gradeInfo["M4"];
+        noteEl.textContent =
+            (isCrno ? "CRNO" : "CRGO") + " " + gi.label +
+            " · Density: " + dens +
+            " · Thickness: " + gi.thick +
+            " · Stack Factor: " + sf +
+            " · Ref. Loss: " + gi.stdLoss;
+
+        // Restrict grade options for CRNO (only 23ZDMH applies)
+        if (gradeSel) {
+            for (let i = 0; i < gradeSel.options.length; i++) {
+                gradeSel.options[i].disabled = isCrno && gradeSel.options[i].value !== "23ZDMH";
+            }
+            if (isCrno) gradeSel.value = "23ZDMH";
+        }
+    }
+
+    if (matSel)   matSel.addEventListener("change", updateNote);
+    if (gradeSel) gradeSel.addEventListener("change", updateNote);
+    updateNote(); // run once on load
 })();

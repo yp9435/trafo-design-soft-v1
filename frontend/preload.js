@@ -1,31 +1,26 @@
-const { contextBridge } = require('electron');
+/**
+ * preload.js — Electron context bridge
+ *
+ * Runs in a sandboxed context before the renderer page loads.
+ * Exposes only the minimum surface area to the renderer via contextBridge.
+ *
+ * All transformer design calculations are performed exclusively by the
+ * Python backend (http://127.0.0.1:8000). No calculation logic belongs here.
+ */
 
-contextBridge.exposeInMainWorld('api', {
-    runCalculation: (inputData) => {
-        // Placeholder transformer calculation engine
-        return dummyCalculation(inputData);
-    }
+const { contextBridge, ipcRenderer } = require('electron');
+
+contextBridge.exposeInMainWorld('electronAPI', {
+    /**
+     * Open a native save dialog and write a file to disk.
+     * Used by PDF / SVG export flows when running inside Electron.
+     * @param {string} filename  — suggested file name
+     * @param {string} data      — file content (base64 or text)
+     * @param {string} encoding  — 'base64' | 'utf8'
+     */
+    saveFile: (filename, data, encoding) =>
+        ipcRenderer.invoke('save-file', { filename, data, encoding }),
+
+    /** Platform string so the renderer can adapt behaviour if needed */
+    platform: process.platform
 });
-
-function dummyCalculation(data) {
-
-    return {
-        windingSummary: {
-            LV1: { turns: 320, conductorArea: 32, currentDensity: 2.5, copperLoss: 180 },
-            LV2: { turns: 415, conductorArea: 30, currentDensity: 2.8, copperLoss: 160 },
-            HV:  { turns: 900, conductorArea: 25, currentDensity: 3.5, copperLoss: 170 }
-        },
-        coreDesign: {
-            netCoreArea: 0.0128,
-            coreDiameter: 0.15,
-            windowHeight: 0.24
-        },
-        performance: {
-            coreLoss: 415,
-            totalLoadLoss: 500,
-            totalLoss: 915,
-            impedance: 6.5,
-            regulation: 3.8
-        }
-    };
-}

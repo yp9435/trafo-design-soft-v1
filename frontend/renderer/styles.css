@@ -1564,3 +1564,396 @@ input[readonly] {
 input.val-invalid, select.val-invalid {
     border-color: #dc3545 !important;
 }
+
+/* =============================================
+   API LOADING SPINNER
+   ============================================= */
+.calc-spinner {
+    width: 22px;
+    height: 22px;
+    border: 3px solid #333;
+    border-top-color: #0078d4;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 10px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+/* =============================================
+   BHAVITRON-STYLE RATING PLATE
+   ============================================= */
+
+.rp-page-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 20px;
+    gap: 18px;
+    overflow-y: auto;
+}
+
+/* Main plate — light metal finish */
+.rp-plate-bv {
+    position: relative;
+    background: linear-gradient(145deg, #e8e8e8 0%, #d4d4d4 35%, #c8c8c8 60%, #d8d8d8 100%);
+    border: 3px solid #888;
+    border-radius: 6px;
+    box-shadow:
+        inset 0 1px 3px rgba(255,255,255,0.7),
+        inset 0 -1px 3px rgba(0,0,0,0.15),
+        0 6px 24px rgba(0,0,0,0.55),
+        0 2px 6px rgba(0,0,0,0.3);
+    width: 780px;
+    max-width: 100%;
+    padding: 18px 22px 14px;
+    color: #1a1a1a;
+    font-family: 'Arial Black', 'Arial', sans-serif;
+}
+
+/* Corner rivets */
+.rp-bv-rivet {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #e0e0e0, #888 60%, #555);
+    border: 1px solid #666;
+    box-shadow: inset 0 1px 2px rgba(255,255,255,0.5), 0 1px 2px rgba(0,0,0,0.4);
+}
+.rp-bv-rivet-tl { top: 10px;  left: 10px; }
+.rp-bv-rivet-tr { top: 10px;  right: 10px; }
+.rp-bv-rivet-bl { bottom: 10px; left: 10px; }
+.rp-bv-rivet-br { bottom: 10px; right: 10px; }
+
+/* Header: logo + company block */
+.rp-bv-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 2.5px solid #1a1a1a;
+    padding-bottom: 10px;
+    margin-bottom: 8px;
+}
+
+.rp-bv-logo-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    min-width: 62px;
+}
+
+.rp-bv-logo-text {
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    color: #1a1a1a;
+    text-align: center;
+}
+
+.rp-bv-company-cell {
+    flex: 1;
+    text-align: center;
+}
+
+.rp-bv-company-name {
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    color: #0a0a0a;
+    line-height: 1.15;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+}
+
+.rp-bv-company-addr {
+    font-size: 12px;
+    font-weight: 700;
+    color: #222;
+    line-height: 1.5;
+    letter-spacing: 0.5px;
+}
+
+/* Product title row */
+.rp-bv-title-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-bottom: 2px solid #1a1a1a;
+    padding-bottom: 7px;
+    margin-bottom: 0;
+}
+
+.rp-bv-title {
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    color: #0a0a0a;
+    text-align: center;
+}
+
+.rp-bv-spec {
+    font-size: 10px;
+    font-weight: 700;
+    color: #333;
+    letter-spacing: 0.5px;
+    margin-top: 1px;
+}
+
+/* Main data table */
+.rp-bv-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 2px solid #1a1a1a;
+}
+
+.rp-bv-table td {
+    border: 1.5px solid #333;
+    padding: 7px 10px;
+    font-size: 12px;
+    line-height: 1.3;
+    vertical-align: top;
+}
+
+.rp-bv-lbl {
+    font-weight: 800;
+    font-size: 11px;
+    color: #111;
+    letter-spacing: 0.3px;
+    width: 20%;
+    background: rgba(0,0,0,0.04);
+}
+
+.rp-bv-val {
+    font-weight: 600;
+    font-size: 12px;
+    color: #1a1a1a;
+    width: 30%;
+}
+
+/* Handwritten-style values (SL No, MFG) */
+.rp-bv-handwrite {
+    font-family: 'Georgia', 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 13px !important;
+    font-weight: 600;
+    color: #111;
+}
+
+/* Losses bar */
+.rp-bv-losses-bar {
+    display: flex;
+    align-items: stretch;
+    border: 2px solid #1a1a1a;
+    border-top: none;
+    background: rgba(0,0,0,0.03);
+}
+
+.rp-bv-loss-cell {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 6px;
+    gap: 3px;
+}
+
+.rp-bv-loss-sep {
+    width: 1.5px;
+    background: #333;
+}
+
+.rp-bv-loss-lbl {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    color: #111;
+    text-align: center;
+}
+
+.rp-bv-loss-val {
+    font-size: 15px;
+    font-weight: 900;
+    color: #0a0a0a;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid #aaa;
+    border-radius: 3px;
+    padding: 2px 12px;
+    min-width: 80px;
+    text-align: center;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
+}
+
+/* Bottom section */
+.rp-bv-bottom {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    border: 2px solid #1a1a1a;
+    border-top: none;
+}
+
+.rp-bv-diagram-cell {
+    flex: 0 0 180px;
+    border-right: 1.5px solid #333;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.rp-bv-isi-cell {
+    flex: 0 0 130px;
+    border-right: 1.5px solid #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 4px;
+    gap: 2px;
+}
+
+.rp-bv-isi-std {
+    font-size: 8.5px;
+    font-weight: 800;
+    text-align: center;
+    color: #111;
+    letter-spacing: 0.3px;
+}
+
+.rp-bv-isi-cm {
+    font-size: 8px;
+    font-weight: 700;
+    color: #111;
+    text-align: center;
+    margin-top: 2px;
+}
+
+.rp-bv-isi-mii {
+    font-size: 10px;
+    font-weight: 900;
+    color: #0a0a0a;
+    letter-spacing: 0.5px;
+}
+
+.rp-bv-phasor-cell {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 8px;
+    gap: 3px;
+}
+
+.rp-bv-phasor-label {
+    font-size: 10px;
+    font-weight: 900;
+    color: #111;
+    letter-spacing: 0.5px;
+}
+
+.rp-bv-guarantee {
+    font-size: 7.5px;
+    font-weight: 700;
+    color: #333;
+    text-align: center;
+    line-height: 1.4;
+    max-width: 220px;
+}
+
+/* Settings bar (not printed) */
+.rp-bv-settings-bar {
+    background: #252535;
+    border: 1px solid #3a3f55;
+    border-radius: 8px;
+    padding: 14px 18px;
+    width: 780px;
+    max-width: 100%;
+}
+
+.rp-bv-settings-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #7ab8f5;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+}
+
+.rp-bv-settings-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 7px;
+}
+
+.rp-bv-settings-row label {
+    font-size: 11px;
+    color: #8a9bc0;
+    min-width: 130px;
+    font-weight: 600;
+}
+
+.rp-bv-settings-row input {
+    flex: 1;
+    background: #1e1e2e;
+    border: 1px solid #3a4060;
+    border-radius: 4px;
+    color: #e0e8ff;
+    padding: 5px 10px;
+    font-size: 12px;
+    max-width: 300px;
+}
+
+.rp-bv-settings-row input:focus {
+    outline: none;
+    border-color: #0078d4;
+}
+
+/* Export buttons */
+.rp-export-bar {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.rp-export-btn {
+    background: #0078d4;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 22px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.4px;
+    transition: background 0.2s;
+}
+.rp-export-btn:hover { background: #005fa3; }
+.rp-export-pdf { background: #c0392b; }
+.rp-export-pdf:hover { background: #a93226; }
+
+/* Print: hide settings and export bar */
+@media print {
+    .rp-bv-settings-bar,
+    .rp-export-bar,
+    .sidebar,
+    .main-header { display: none !important; }
+    .rp-plate-bv { box-shadow: none; border: 2px solid #000; }
+}
+
+/* ── Remove number input spinners (up/down arrows) globally ──────────────
+   Users should type values directly — spinners are unusable for large numbers */
+
+/* Chrome, Safari, Edge, Electron */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* Firefox */
+input[type="number"] {
+    -moz-appearance: textfield;
+}
