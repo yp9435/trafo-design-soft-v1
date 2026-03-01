@@ -169,15 +169,6 @@ class Formulas:
     
     # Need to check these 2 formulas once.
 
-    def single_conductor_area(self, conductor_diameter: float) -> float:
-        """
-        Calculate area of a single round conductor.
-
-        @param conductor_diameter: Diameter of conductor (mm)
-        @return: Area (mm^2)
-        """
-        return math.pi * (conductor_diameter ** 2) / 4
-
     def parallel_conductors(self, required_area: float, single_conductor_area: float) -> int:
         """
         Calculate number of parallel conductors.
@@ -232,7 +223,7 @@ class Formulas:
         @param axial_parallel: Parallel conductors in axial direction
         @return: Breadth (mm)
         """
-        return (winding_length / (turns_per_layer + 1)) * axial_parallel
+        return winding_length / ((turns_per_layer + 1) * axial_parallel)
 
     def insulated_conductor_breadth(self, breadth: float, insulation_thickness: float = 0.1) -> float:
         """
@@ -364,7 +355,7 @@ class Formulas:
         @param interlayer_insulation: Interlayer insulation (mm)
         @return: Radial thickness (mm)
         """
-        thickness = (insulated_height * radial_parallel * number_of_layers + interlayer_insulation * (number_of_layers - 1))
+        thickness = (insulated_height * radial_parallel * number_of_layers + interlayer_insulation * (number_of_layers - 1) + 0.4)
         return math.ceil(thickness)
 
     # Winding Dimensions
@@ -397,7 +388,7 @@ class Formulas:
 
     # Mean Length of Turn (MLT)
 
-    def mean_length_of_turn(self,inner_width: float,inner_height: float,outer_width: float,outer_height: float,radial_thickness: float = 8) -> float:
+    def mean_length_of_turn(self,inner_width: float,inner_height: float,outer_width: float,outer_height: float,radial_thickness: float) -> float:
         """
         Calculate mean length of one turn (meters).
 
@@ -436,7 +427,7 @@ class Formulas:
             * number_of_phases
             * tolerance_factor
         )
-        return math.ceil(length / 100) * 100
+        return math.ceil(length)
 
     # Resistance Calculation
 
@@ -458,7 +449,7 @@ class Formulas:
         """
         # Resistivity constants at 75C (Ohm·mm^2/m)
         resistivity_map = {
-            'cu': 0.0210,
+            'cu': 0.02128,
             'al': 0.0345
         }
         
