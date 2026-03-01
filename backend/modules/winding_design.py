@@ -85,7 +85,8 @@ class WindingDesign:
 
         conductor_height            = f.conductor_height(
             gross_conductor_area,
-            conductor_breadth
+            conductor_breadth,
+            radial_parallel
         )
 
         insulated_conductor_height  = f.insulated_conductor_height(conductor_height)

@@ -201,6 +201,14 @@ class Formulas:
         @return: End clearance (mm)
         """
         return round(window_height * 0.09)
+    
+    def end_clr(self, voltage_per_phase: float) -> float:
+        if voltage_per_phase < 200:
+            return 8
+        elif voltage_per_phase < 1100:
+            return 12
+        else:
+            return 16
 
     def winding_length(self, window_height: float, end_clearance: float) -> float:
         """
@@ -223,7 +231,7 @@ class Formulas:
         @param axial_parallel: Parallel conductors in axial direction
         @return: Breadth (mm)
         """
-        return winding_length / ((turns_per_layer + 1) * axial_parallel)
+        return round(winding_length / ((turns_per_layer + 1) * axial_parallel),1)
 
     def insulated_conductor_breadth(self, breadth: float, insulation_thickness: float = 0.1) -> float:
         """
@@ -233,7 +241,7 @@ class Formulas:
         @param insulation_thickness: Insulation thickness (mm)
         @return: Insulated breadth (mm)
         """
-        return breadth + insulation_thickness
+        return round(breadth + insulation_thickness,2)
 
     def estimated_conductor_height(self, net_conductor_area: float, breadth: float) -> float:
         """
@@ -282,7 +290,7 @@ class Formulas:
 
     # Conductor Height (Final)
 
-    def conductor_height(self, gross_area: float, breadth: float) -> float:
+    def conductor_height(self, gross_area: float, breadth: float, radial_parallel: float) -> float:
         """
         Calculate conductor height and round to nearest 0.1 mm.
 
@@ -290,7 +298,7 @@ class Formulas:
         @param breadth: Conductor breadth (mm)
         @return: Rounded conductor height (mm)
         """
-        height = gross_area / breadth
+        height = gross_area / radial_parallel / breadth
         return round(height, 1)
 
     def insulated_conductor_height(self, height: float, insulation_thickness: float = 0.1) -> float:
@@ -301,7 +309,7 @@ class Formulas:
         @param insulation_thickness: Insulation thickness (mm)
         @return: Insulated height (mm)
         """
-        return height + insulation_thickness
+        return round(height + insulation_thickness,2)
 
     def total_cross_section_area(self, breadth: float, height: float) -> float:
         """
@@ -321,7 +329,7 @@ class Formulas:
         @param total_area: Actual conductor area (mm^2)
         @return: Current density (A/mm^2)
         """
-        return phase_current / total_area
+        return round(phase_current / total_area, 3)
 
     # Inter Layer Insulation
 
@@ -340,6 +348,8 @@ class Formulas:
         @return: Interlayer insulation (mm)
         """
         insulation = ((volts_per_turn * 4 * turns_per_layer) / 8000) - conductor_insulation
+        if insulation < 0:
+            return 1
         return max(insulation, 0)
 
     # Radial Thickness
@@ -525,14 +535,14 @@ class Formulas:
 
         @return: Bare weight (kg)
         """
-        return (
-            mean_turn_length
+        return round((
+            mean_turn_length 
             * turns_per_phase
             * conductor_area
             * number_of_phases
             * density_g_per_cm3
             * 1e-3
-        )
+        ),2)
 
     def insulated_weight(
         self,
@@ -554,7 +564,7 @@ class Formulas:
 
         factor = (((insulated_area - bare_area) / bare_area) * (insulation_density / conductor_density)) + 1
 
-        return bare_weight * factor
+        return round(bare_weight * factor, 2)
 
     def procurement_weight(self, insulated_weight: float, tolerance: float = 0.05) -> float:
         """
@@ -564,7 +574,7 @@ class Formulas:
         @param tolerance: Percentage (default 5%)
         @return: Procurement weight (kg)
         """
-        return insulated_weight * (1 + tolerance)
+        return round(insulated_weight * (1 + tolerance), 2)
 
     # Stray Loss Factor 
 
@@ -657,12 +667,12 @@ class Formulas:
         """
         stray_multiplier = 1 + (stray_loss_percentage / 100)
 
-        return (
+        return math.ceil((
             load_loss_factor
             * bare_weight
             * (current_density ** 2)
             * stray_multiplier
-        )
+        ))
 
     # Heat Dissipation Factor 
 
@@ -715,7 +725,7 @@ class Formulas:
             * (winding_length_m * mean_turn_length_m)
         )
 
-        return load_loss / cooling_area
+        return round(load_loss / cooling_area, 2)
     
     # Core Length
 
