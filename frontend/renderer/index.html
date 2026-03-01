@@ -141,8 +141,56 @@
                                             </select>
                                         </td>
                                     </tr>
+                                    <tr>
+                                        <th scope="row">Axial Parallel (Np)</th>
+                                        <td><input type="number" id="lv1axPar" name="lv1axPar" min="1" value="1" aria-label="LV1 Axial Parallel"></td>
+                                        <td><input type="number" id="lv2axPar" name="lv2axPar" min="1" value="1" aria-label="LV2 Axial Parallel"></td>
+                                        <td><input type="number" id="hvaxPar"  name="hvaxPar"  min="1" value="1" aria-label="HV Axial Parallel"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Radial Parallel (Nr)</th>
+                                        <td><input type="number" id="lv1radPar" name="lv1radPar" min="1" value="1" aria-label="LV1 Radial Parallel"></td>
+                                        <td><input type="number" id="lv2radPar" name="lv2radPar" min="1" value="1" aria-label="LV2 Radial Parallel"></td>
+                                        <td><input type="number" id="hvradPar"  name="hvradPar"  min="1" value="1" aria-label="HV Radial Parallel"></td>
+                                    </tr>
                                 </tbody>
                             </table>
+
+                            <!-- CORE MATERIAL TABLE -->
+                            <h4 style="margin-top:22px;">Core Material</h4>
+                            <table class="winding-table core-material-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Parameter</th>
+                                        <th scope="col">Selection</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <th scope="row">Core Material Type</th>
+                                        <td>
+                                            <select id="coreMaterialType" name="coreMaterialType" aria-label="Core Material Type">
+                                                <option value="CRGO">CRGO (Silicon Steel)</option>
+                                                <option value="CRNO">CRNO (Amorphous / Low-loss)</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Core Grade</th>
+                                        <td>
+                                            <select id="coreGrade" name="coreGrade" aria-label="Core Grade">
+                                                <option value="M4">M-4 (0.27 mm)</option>
+                                                <option value="M3">M-3 (0.23 mm)</option>
+                                                <option value="23ZDMH">23ZDMH (0.23 mm)</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <div class="core-material-note" id="coreMaterialNote">
+                                <span class="cmnote-label">ℹ</span>
+                                <span id="coreMaterialNoteText">CRGO M-4 · Density: 7.65 g/cc · Thickness: 0.27 mm</span>
+                            </div>
                         </div>
 
                     </div>
@@ -153,6 +201,7 @@
                     </div>
 
                     <div class="center-btn">
+                        <div id="calcSpinner" class="calc-spinner" style="display:none;"></div>
                         <button type="submit" id="runCalcBtn" class="primary-btn">RUN CALCULATION</button>
                     </div>
                 </form>
@@ -176,6 +225,11 @@
                     <div class="output-group">
                         <h4>Core Design</h4>
                         <div id="coreOutput" class="kv-list"></div>
+                    </div>
+
+                    <div class="output-group">
+                        <h4>Core Material Summary</h4>
+                        <div id="coreMaterialOutput" class="kv-list"></div>
                     </div>
 
                     <div class="output-group">
@@ -205,7 +259,6 @@
 
                     <div class="tr-section-header">SECTION 1: CORE DESIGN</div>
 
-                    <!-- Main core metrics as a proper 2-column table -->
                     <div class="tr-table-wrapper">
                         <table class="tr-data-table">
                             <thead>
@@ -228,7 +281,6 @@
                         </table>
                     </div>
 
-                    <!-- Cross Conductor Area breakdown — 4-column table -->
                     <div class="tr-sub-section-header">Cross Conductor Area Calculations</div>
 
                     <div class="tr-table-wrapper">
@@ -427,22 +479,15 @@
                                 <thead>
                                     <tr>
                                         <th>Category</th>
-                                        <th>Material</th>
-                                        <th>Grade</th>
+                                        <th>Material / Grade</th>
                                         <th class="col-num">Quantity (kg)</th>
                                         <th class="col-num">Rate (₹/kg)</th>
+                                        <th>Price Source</th>
                                         <th class="col-num">Total Cost (₹)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="bomCoreBody">
-                                    <tr>
-                                        <td>Core</td>
-                                        <td>CRGO-Silicon Steel</td>
-                                        <td>M4</td>
-                                        <td class="col-num">285</td>
-                                        <td class="col-num">₹ 210</td>
-                                        <td class="col-num bom-cost">₹ 59,850</td>
-                                    </tr>
+                                    <tr><td colspan="6" style="text-align:center;opacity:.5;">Run calculation to populate</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -457,43 +502,18 @@
                                     <tr>
                                         <th>Winding</th>
                                         <th>Material</th>
-                                        <th>Conductor Type</th>
                                         <th class="col-num">Weight (kg)</th>
                                         <th class="col-num">Rate (₹/kg)</th>
+                                        <th>Price Source</th>
                                         <th class="col-num">Total Cost (₹)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="bomWindingBody">
-                                    <tr>
-                                        <td class="bom-winding-label lv">LV1</td>
-                                        <td>Copper</td>
-                                        <td>Rectangular</td>
-                                        <td class="col-num">45 kg</td>
-                                        <td class="col-num">₹ 850</td>
-                                        <td class="col-num bom-cost">₹ 38,250</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="bom-winding-label lv">LV2</td>
-                                        <td>Copper</td>
-                                        <td>Rectangular</td>
-                                        <td class="col-num">42 kg</td>
-                                        <td class="col-num">₹ 850</td>
-                                        <td class="col-num bom-cost">₹ 35,700</td>
-                                    </tr>
-                                    <tr>
-                                        <td class="bom-winding-label hv">HV</td>
-                                        <td>Copper</td>
-                                        <td>Round</td>
-                                        <td class="col-num">55 kg</td>
-                                        <td class="col-num">₹ 850</td>
-                                        <td class="col-num bom-cost">₹ 46,750</td>
-                                    </tr>
+                                    <tr><td colspan="6" style="text-align:center;opacity:.5;">Run calculation to populate</td></tr>
                                 </tbody>
                             </table>
                         </div>
                     </div>
-
-
 
                 </div>
                 <!-- end bom-left -->
@@ -504,27 +524,20 @@
                         <h4 class="bom-cost-title">Cost Summary</h4>
 
                         <div class="bom-cost-row">
-                            <span class="bom-cost-label">Core Cost:</span>
-                            <span class="bom-cost-val">₹ 59,850</span>
+                            <span class="bom-cost-label">Active Part Weight:</span>
+                            <span class="bom-cost-val" id="bomActiveWeight">—</span>
                         </div>
                         <div class="bom-cost-row">
-                            <span class="bom-cost-label">Winding Cost:</span>
-                            <span class="bom-cost-val">₹ 1,20,700</span>
-                        </div>
-                        <div class="bom-cost-row">
-                            <span class="bom-cost-label">Insulation &amp; Misc.:</span>
-                            <span class="bom-cost-val">₹ 19,250</span>
+                            <span class="bom-cost-label">Enclosure Weight:</span>
+                            <span class="bom-cost-val" id="bomEnclosureWeight">—</span>
                         </div>
 
                         <div class="bom-cost-total-row">
                             <span class="bom-cost-total-label">TOTAL MATERIAL COST:</span>
-                            <span class="bom-cost-total-val">₹ 1,99,800</span>
+                            <span class="bom-cost-total-val" id="bomTotalCost">—</span>
                         </div>
 
-                        <p class="bom-margin-note">Estimated Manufacturing Margin (1290)</p>
-
-                        <div class="bom-final-label">Final Estimated Cost:</div>
-                        <div class="bom-final-val">₹ 2,23,776</div>
+                        <p class="bom-margin-note">Currency: <strong id="bomCurrency">INR</strong></p>
                     </div>
                 </div>
 
@@ -624,337 +637,250 @@
         <!-- end page-layout-design -->
         <!-- ===================== RATING PLATE PAGE ===================== -->
         <div id="page-rating-plate" class="page hidden">
-
             <div class="rp-page-wrap">
 
                 <!-- The actual rating plate — this is what gets exported -->
                 <div id="ratingPlateExport">
-                <div class="rp-plate">
+                <div class="rp-plate-bv">
 
-                    <!-- Company header -->
-                    <div class="rp-company-header">
-                        <div class="rp-company-name">DISHA TRANSFORMERS</div>
-                        <div class="rp-company-addr">PLOT NO.13, ALINDRA SAVLI IND. ESTATE</div>
-                        <div class="rp-company-addr">MANJUSAR, TAL: SAVLI, DIST. VADODARA</div>
-                        <div class="rp-product-title">3 PHASE AL. WOUND DISTRIBUTION TRANSFORMER</div>
-                    </div>
+                    <!-- Corner rivets -->
+                    <div class="rp-bv-rivet rp-bv-rivet-tl"></div>
+                    <div class="rp-bv-rivet rp-bv-rivet-tr"></div>
+                    <div class="rp-bv-rivet rp-bv-rivet-bl"></div>
+                    <div class="rp-bv-rivet rp-bv-rivet-br"></div>
 
-                    <!-- Main data grid -->
-                    <div class="rp-data-section">
-
-                        <!-- LEFT column -->
-                        <div class="rp-col rp-col-left">
-
-                            <div class="rp-row">
-                                <span class="rp-lbl">STANDARD</span>
-                                <span class="rp-val">IS 1180:2014 (1)</span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">KVA</span>
-                                <span class="rp-val" id="rp-kva">10</span>
-                            </div>
-                            <div class="rp-row rp-row-bracket">
-                                <span class="rp-lbl">VOLTS AT</span>
-                                <span class="rp-bracket-vals">
-                                    <span class="rp-bracket-row"><span class="rp-sublbl">HV</span><span class="rp-val" id="rp-hv-volts">11000</span></span>
-                                    <span class="rp-bracket-row"><span class="rp-sublbl">LV</span><span class="rp-val" id="rp-lv-volts">433</span></span>
-                                </span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">NO LOAD</span>
-                                <span class="rp-val">—</span>
-                            </div>
-                            <div class="rp-row rp-row-bracket">
-                                <span class="rp-lbl">BIL</span>
-                                <span class="rp-bracket-vals">
-                                    <span class="rp-bracket-row"><span class="rp-sublbl">HV</span><span class="rp-val">95 KVP</span></span>
-                                    <span class="rp-bracket-row"><span class="rp-sublbl">LV</span><span class="rp-val">—</span></span>
-                                </span>
-                            </div>
-                            <div class="rp-row rp-row-bracket">
-                                <span class="rp-lbl">AMP.</span>
-                                <span class="rp-bracket-vals">
-                                    <span class="rp-bracket-row"><span class="rp-sublbl">HV</span><span class="rp-val" id="rp-hv-amp">0.525</span></span>
-                                    <span class="rp-bracket-row"><span class="rp-sublbl">LV</span><span class="rp-val" id="rp-lv-amp">13.33</span></span>
-                                </span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">WINDING</span>
-                                <span class="rp-val">ALU.</span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">TYPE OF COOLING</span>
-                                <span class="rp-val">ONAN</span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">VECTOR GROUP</span>
-                                <span class="rp-val" id="rp-vector">DYN-11</span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">IMP VOLTS %</span>
-                                <span class="rp-val" id="rp-imp">4.5</span>
-                            </div>
-
+                    <!-- HEADER: Logo + Company name -->
+                    <div class="rp-bv-header">
+                        <div class="rp-bv-logo-cell">
+                            <svg viewBox="0 0 60 60" width="52" height="52" xmlns="http://www.w3.org/2000/svg">
+                                <polygon points="30,4 56,18 56,42 30,56 4,42 4,18" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
+                                <polygon points="30,12 48,22 48,40 30,50 12,40 12,22" fill="#1a1a1a"/>
+                                <polygon points="30,18 42,26 42,38 30,46 18,38 18,26" fill="#d4d4d4"/>
+                                <line x1="30" y1="18" x2="30" y2="46" stroke="#1a1a1a" stroke-width="2"/>
+                                <line x1="18" y1="26" x2="42" y2="38" stroke="#1a1a1a" stroke-width="1.2"/>
+                                <line x1="42" y1="26" x2="18" y2="38" stroke="#1a1a1a" stroke-width="1.2"/>
+                            </svg>
+                            <div class="rp-bv-logo-text" id="rp-bv-logo-label">YOUR CO.</div>
                         </div>
-
-                        <!-- RIGHT column -->
-                        <div class="rp-col rp-col-right">
-
-                            <div class="rp-row">
-                                <span class="rp-lbl">ENERGY EFFICIENCY</span>
-                                <span class="rp-val">NA</span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">FREQUENCY</span>
-                                <span class="rp-val" id="rp-freq">50</span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">IMPEDANCE VOLTAGE</span>
-                                <span class="rp-val">4.5%</span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">CORE-WINDING WT.</span>
-                                <span class="rp-val">85</span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">WEIGHT OF OIL</span>
-                                <span class="rp-val">64</span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">TOTAL WEIGHT</span>
-                                <span class="rp-val">236</span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">OIL IN LITRES</span>
-                                <span class="rp-val">79</span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">YEAR OF MANU.</span>
-                                <span class="rp-val" id="rp-year">2024</span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">TOTAL LOSSES AT 50% LOAD</span>
-                                <span class="rp-val">84</span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">TOTAL LOSSES AT 100% LOAD</span>
-                                <span class="rp-val">216</span>
-                            </div>
-                            <div class="rp-row">
-                                <span class="rp-lbl">SR. NO.</span>
-                                <span class="rp-val rp-sr">DTR/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;184</span>
-                            </div>
-
+                        <div class="rp-bv-company-cell">
+                            <div class="rp-bv-company-name" id="rp-bv-company-name">YOUR COMPANY NAME</div>
+                            <div class="rp-bv-company-addr" id="rp-bv-company-addr1">ADDRESS LINE 1</div>
+                            <div class="rp-bv-company-addr" id="rp-bv-company-addr2">CITY – PIN CODE, STATE</div>
                         </div>
-
-                    </div>
-                    <!-- end rp-data-section -->
-
-                    <!-- Full-width row: guaranteed max temp rise -->
-                    <div class="rp-full-row">
-                        <span class="rp-lbl">GAURANTEED MAX TEMP RISE IN OIL/WNDG</span>
-                        <span class="rp-val">°C 35/40</span>
                     </div>
 
-                    <!-- No load / full load losses row -->
-                    <div class="rp-losses-row">
-                        <span class="rp-lbl">NO LOAD LOSSES</span>
-                        <span class="rp-val rp-val-box">40</span>
-                        <span class="rp-lbl rp-lbl-mid">FULL LOAD LOSSES</span>
-                        <span class="rp-val rp-val-box">176</span>
+                    <!-- PRODUCT TITLE + SPEC -->
+                    <div class="rp-bv-title-row">
+                        <div class="rp-bv-title" id="rp-bv-title">DRY TYPE DISTRIBUTION TRANSFORMER</div>
+                        <div class="rp-bv-spec" id="rp-bv-spec">IS 1180 : 2014 PART 1</div>
                     </div>
 
-                    <!-- Customer rows -->
-                    <div class="rp-customer-row"><span class="rp-lbl">CUSTOMER</span><span class="rp-val rp-underline"></span></div>
-                    <div class="rp-customer-row"><span class="rp-lbl">CUSTOMER REF</span><span class="rp-val rp-underline"></span></div>
-                    <div class="rp-customer-row"><span class="rp-lbl">DATE OF DESP.</span><span class="rp-val rp-underline"></span></div>
+                    <!-- MAIN DATA TABLE -->
+                    <table class="rp-bv-table">
+                        <tbody>
+                            <tr>
+                                <td class="rp-bv-lbl">RATING</td>
+                                <td class="rp-bv-val" id="rp-bv-rating">— KVA</td>
+                                <td class="rp-bv-lbl">FREQUENCY</td>
+                                <td class="rp-bv-val" id="rp-bv-freq">50 Hz</td>
+                            </tr>
+                            <tr>
+                                <td class="rp-bv-lbl">%IMP. VOLTAGE</td>
+                                <td class="rp-bv-val" id="rp-bv-imp">—</td>
+                                <td class="rp-bv-lbl">SL. No.</td>
+                                <td class="rp-bv-val rp-bv-handwrite" id="rp-bv-slno">—</td>
+                            </tr>
+                            <tr>
+                                <td class="rp-bv-lbl">PRIMARY (HV)</td>
+                                <td class="rp-bv-val" id="rp-bv-primary">—</td>
+                                <td class="rp-bv-lbl">MFG.</td>
+                                <td class="rp-bv-val rp-bv-handwrite" id="rp-bv-mfg">—</td>
+                            </tr>
+                            <tr>
+                                <td class="rp-bv-lbl">SECONDARY 1 (LV1)</td>
+                                <td class="rp-bv-val" id="rp-bv-sec1">—</td>
+                                <td class="rp-bv-lbl">WEIGHT</td>
+                                <td class="rp-bv-val" id="rp-bv-weight">—</td>
+                            </tr>
+                            <tr>
+                                <td class="rp-bv-lbl">SECONDARY 2 (LV2)</td>
+                                <td class="rp-bv-val" id="rp-bv-sec2">—</td>
+                                <td class="rp-bv-lbl">INSUL. CLASS</td>
+                                <td class="rp-bv-val" id="rp-bv-insul">—</td>
+                            </tr>
+                            <tr>
+                                <td class="rp-bv-lbl">VECTOR SYMBOL</td>
+                                <td class="rp-bv-val" id="rp-bv-vector" colspan="3">—</td>
+                            </tr>
+                        </tbody>
+                    </table>
 
-                    <!-- Bottom section: winding diagram + ISI mark + vector diagram -->
-                    <div class="rp-bottom-section">
+                    <!-- LOSSES BAR -->
+                    <div class="rp-bv-losses-bar">
+                        <div class="rp-bv-loss-cell">
+                            <span class="rp-bv-loss-lbl">NO LOAD LOSSES</span>
+                            <span class="rp-bv-loss-val" id="rp-bv-noload">— W</span>
+                        </div>
+                        <div class="rp-bv-loss-sep"></div>
+                        <div class="rp-bv-loss-cell">
+                            <span class="rp-bv-loss-lbl">FULL LOAD LOSSES</span>
+                            <span class="rp-bv-loss-val" id="rp-bv-fullload">— W</span>
+                        </div>
+                        <div class="rp-bv-loss-sep"></div>
+                        <div class="rp-bv-loss-cell">
+                            <span class="rp-bv-loss-lbl">CORE MATERIAL</span>
+                            <span class="rp-bv-loss-val" id="rp-bv-coremat">CRGO M-4</span>
+                        </div>
+                    </div>
 
-                        <!-- ① WINDING CONNECTION DIAGRAM -->
-                        <div class="rp-diagram">
-                            <svg viewBox="0 0 175 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:130px;">
-                                <!-- ── HV terminals top row: 2N 2U 2V 2W ── -->
-                                <!-- bushing circles -->
-                                <circle cx="22"  cy="10" r="5" fill="none" stroke="#000" stroke-width="1.2"/>
-                                <circle cx="62"  cy="10" r="5" fill="none" stroke="#000" stroke-width="1.2"/>
-                                <circle cx="102" cy="10" r="5" fill="none" stroke="#000" stroke-width="1.2"/>
-                                <circle cx="142" cy="10" r="5" fill="none" stroke="#000" stroke-width="1.2"/>
-                                <!-- labels -->
+                    <!-- BOTTOM: Winding diagram + ISI + Phasor -->
+                    <div class="rp-bv-bottom">
+
+                        <!-- Winding connection diagram -->
+                        <div class="rp-bv-diagram-cell">
+                            <svg viewBox="0 0 175 130" xmlns="http://www.w3.org/2000/svg" style="width:175px;height:130px;">
+                                <circle cx="22"  cy="10" r="5" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+                                <circle cx="62"  cy="10" r="5" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+                                <circle cx="102" cy="10" r="5" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+                                <circle cx="142" cy="10" r="5" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
                                 <text x="22"  y="5"  font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold">2N</text>
                                 <text x="62"  y="5"  font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold">2U</text>
                                 <text x="102" y="5"  font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold">2V</text>
                                 <text x="142" y="5"  font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold">2W</text>
-                                <!-- vertical leads from HV terminals down to coil tops -->
-                                <line x1="62"  y1="15" x2="62"  y2="27" stroke="#000" stroke-width="1"/>
-                                <line x1="102" y1="15" x2="102" y2="27" stroke="#000" stroke-width="1"/>
-                                <line x1="142" y1="15" x2="142" y2="27" stroke="#000" stroke-width="1"/>
-                                <!-- 2N (neutral) lead down to bottom bus -->
-                                <line x1="22" y1="15" x2="22" y2="80" stroke="#000" stroke-width="1"/>
-
-                                <!-- ── HV coils (3 rectangles with horizontal lines = winding symbol) ── -->
-                                <!-- Coil U -->
-                                <rect x="54" y="27" width="16" height="30" fill="none" stroke="#000" stroke-width="1.2"/>
-                                <line x1="54" y1="33" x2="70" y2="33" stroke="#000" stroke-width="0.6"/>
-                                <line x1="54" y1="39" x2="70" y2="39" stroke="#000" stroke-width="0.6"/>
-                                <line x1="54" y1="45" x2="70" y2="45" stroke="#000" stroke-width="0.6"/>
-                                <line x1="54" y1="51" x2="70" y2="51" stroke="#000" stroke-width="0.6"/>
-                                <!-- Coil V -->
-                                <rect x="94" y="27" width="16" height="30" fill="none" stroke="#000" stroke-width="1.2"/>
-                                <line x1="94"  y1="33" x2="110" y2="33" stroke="#000" stroke-width="0.6"/>
-                                <line x1="94"  y1="39" x2="110" y2="39" stroke="#000" stroke-width="0.6"/>
-                                <line x1="94"  y1="45" x2="110" y2="45" stroke="#000" stroke-width="0.6"/>
-                                <line x1="94"  y1="51" x2="110" y2="51" stroke="#000" stroke-width="0.6"/>
-                                <!-- Coil W -->
-                                <rect x="134" y="27" width="16" height="30" fill="none" stroke="#000" stroke-width="1.2"/>
-                                <line x1="134" y1="33" x2="150" y2="33" stroke="#000" stroke-width="0.6"/>
-                                <line x1="134" y1="39" x2="150" y2="39" stroke="#000" stroke-width="0.6"/>
-                                <line x1="134" y1="45" x2="150" y2="45" stroke="#000" stroke-width="0.6"/>
-                                <line x1="134" y1="51" x2="150" y2="51" stroke="#000" stroke-width="0.6"/>
-
-                                <!-- ── HV coil bottom leads → common neutral bus ── -->
-                                <line x1="62"  y1="57" x2="62"  y2="80" stroke="#000" stroke-width="1"/>
-                                <line x1="102" y1="57" x2="102" y2="80" stroke="#000" stroke-width="1"/>
-                                <line x1="142" y1="57" x2="142" y2="80" stroke="#000" stroke-width="1"/>
-                                <!-- Horizontal neutral bus 2N -->
-                                <line x1="22" y1="80" x2="142" y2="80" stroke="#000" stroke-width="1.2"/>
-
-                                <!-- ── LV coils (3 small rects below) ── -->
-                                <!-- LV Coil U -->
-                                <rect x="54" y="85" width="16" height="22" fill="none" stroke="#000" stroke-width="1.2"/>
-                                <line x1="54" y1="90" x2="70" y2="90" stroke="#000" stroke-width="0.6"/>
-                                <line x1="54" y1="95" x2="70" y2="95" stroke="#000" stroke-width="0.6"/>
-                                <line x1="54" y1="100" x2="70" y2="100" stroke="#000" stroke-width="0.6"/>
-                                <!-- LV Coil V -->
-                                <rect x="94" y="85" width="16" height="22" fill="none" stroke="#000" stroke-width="1.2"/>
-                                <line x1="94"  y1="90" x2="110" y2="90" stroke="#000" stroke-width="0.6"/>
-                                <line x1="94"  y1="95" x2="110" y2="95" stroke="#000" stroke-width="0.6"/>
-                                <line x1="94"  y1="100" x2="110" y2="100" stroke="#000" stroke-width="0.6"/>
-                                <!-- LV Coil W -->
-                                <rect x="134" y="85" width="16" height="22" fill="none" stroke="#000" stroke-width="1.2"/>
-                                <line x1="134" y1="90"  x2="150" y2="90"  stroke="#000" stroke-width="0.6"/>
-                                <line x1="134" y1="95"  x2="150" y2="95"  stroke="#000" stroke-width="0.6"/>
-                                <line x1="134" y1="100" x2="150" y2="100" stroke="#000" stroke-width="0.6"/>
-
-                                <!-- ── LV terminal bushings + crossover wires ── -->
-                                <!-- 1U at bottom of coil U → bushing -->
-                                <line x1="62"  y1="107" x2="62"  y2="115" stroke="#000" stroke-width="1"/>
-                                <circle cx="62"  cy="118" r="3.5" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <line x1="62"  y1="15" x2="62"  y2="27" stroke="#1a1a1a" stroke-width="1"/>
+                                <line x1="102" y1="15" x2="102" y2="27" stroke="#1a1a1a" stroke-width="1"/>
+                                <line x1="142" y1="15" x2="142" y2="27" stroke="#1a1a1a" stroke-width="1"/>
+                                <line x1="22"  y1="15" x2="22"  y2="80" stroke="#1a1a1a" stroke-width="1"/>
+                                <rect x="54"  y="27" width="16" height="30" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+                                <line x1="54"  y1="33" x2="70"  y2="33" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="54"  y1="39" x2="70"  y2="39" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="54"  y1="45" x2="70"  y2="45" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="54"  y1="51" x2="70"  y2="51" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <rect x="94"  y="27" width="16" height="30" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+                                <line x1="94"  y1="33" x2="110" y2="33" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="94"  y1="39" x2="110" y2="39" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="94"  y1="45" x2="110" y2="45" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="94"  y1="51" x2="110" y2="51" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <rect x="134" y="27" width="16" height="30" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+                                <line x1="134" y1="33" x2="150" y2="33" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="134" y1="39" x2="150" y2="39" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="134" y1="45" x2="150" y2="45" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="134" y1="51" x2="150" y2="51" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="62"  y1="57" x2="62"  y2="80" stroke="#1a1a1a" stroke-width="1"/>
+                                <line x1="102" y1="57" x2="102" y2="80" stroke="#1a1a1a" stroke-width="1"/>
+                                <line x1="142" y1="57" x2="142" y2="80" stroke="#1a1a1a" stroke-width="1"/>
+                                <line x1="22"  y1="80" x2="142" y2="80" stroke="#1a1a1a" stroke-width="1.2"/>
+                                <rect x="54"  y="85" width="16" height="22" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+                                <line x1="54"  y1="90" x2="70"  y2="90" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="54"  y1="95" x2="70"  y2="95" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="54"  y1="100" x2="70" y2="100" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <rect x="94"  y="85" width="16" height="22" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+                                <line x1="94"  y1="90" x2="110" y2="90"  stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="94"  y1="95" x2="110" y2="95"  stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="94"  y1="100" x2="110" y2="100" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <rect x="134" y="85" width="16" height="22" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
+                                <line x1="134" y1="90"  x2="150" y2="90"  stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="134" y1="95"  x2="150" y2="95"  stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="134" y1="100" x2="150" y2="100" stroke="#1a1a1a" stroke-width="0.6"/>
+                                <line x1="62"  y1="107" x2="62"  y2="115" stroke="#1a1a1a" stroke-width="1"/>
+                                <circle cx="62"  cy="118" r="3.5" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
                                 <text x="62"  y="128" font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold">1U</text>
-
-                                <!-- 1V: crossover from coil V -->
-                                <line x1="102" y1="107" x2="102" y2="113" stroke="#000" stroke-width="1"/>
-                                <!-- crossover arc (line going left over 1U) -->
-                                <path d="M102,113 Q82,108 62,113" fill="none" stroke="#000" stroke-width="1"/>
-                                <circle cx="102" cy="118" r="3.5" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <line x1="102" y1="107" x2="102" y2="113" stroke="#1a1a1a" stroke-width="1"/>
+                                <path d="M102,113 Q82,108 62,113" fill="none" stroke="#1a1a1a" stroke-width="1"/>
+                                <circle cx="102" cy="118" r="3.5" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
                                 <text x="102" y="128" font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold">1V</text>
-
-                                <!-- 1W: crossover from coil W -->
-                                <line x1="142" y1="107" x2="142" y2="111" stroke="#000" stroke-width="1"/>
-                                <path d="M142,111 Q102,104 62,111" fill="none" stroke="#000" stroke-width="1"/>
-                                <circle cx="142" cy="118" r="3.5" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <line x1="142" y1="107" x2="142" y2="111" stroke="#1a1a1a" stroke-width="1"/>
+                                <path d="M142,111 Q102,104 62,111" fill="none" stroke="#1a1a1a" stroke-width="1"/>
+                                <circle cx="142" cy="118" r="3.5" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
                                 <text x="142" y="128" font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold">1W</text>
-
-                                <!-- outer box -->
-                                <rect x="2" y="2" width="171" height="126" fill="none" stroke="#000" stroke-width="1.2"/>
+                                <rect x="2" y="2" width="171" height="126" fill="none" stroke="#1a1a1a" stroke-width="1.2"/>
                             </svg>
                         </div>
 
-                        <!-- ② ISI MARK (govt logo via CDN/public domain SVG) -->
-                        <div class="rp-isi-block">
-                            <div class="rp-isi-std">IS:1180:2014 PART 1</div>
-                            <!-- ISI mark — faithful recreation as inline SVG -->
-                            <svg viewBox="0 0 80 80" width="70" height="70" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:4px auto;">
-                                <!-- Outer rounded square border -->
-                                <rect x="3" y="3" width="74" height="74" rx="8" ry="8" fill="none" stroke="#000" stroke-width="3"/>
-                                <!-- Inner border -->
-                                <rect x="7" y="7" width="66" height="66" rx="5" ry="5" fill="none" stroke="#000" stroke-width="1.5"/>
-                                <!-- ISI letters -->
-                                <!-- I -->
-                                <rect x="11" y="20" width="6" height="40" fill="#000"/>
-                                <rect x="9"  y="18" width="10" height="5" fill="#000"/>
-                                <rect x="9"  y="57" width="10" height="5" fill="#000"/>
-                                <!-- S -->
-                                <path d="M24,22 Q24,18 34,18 Q44,18 44,26 Q44,32 34,34 Q24,36 24,44 Q24,52 34,52 Q44,52 44,48" fill="none" stroke="#000" stroke-width="4" stroke-linecap="round"/>
-                                <!-- I (right) -->
-                                <rect x="48" y="20" width="6" height="40" fill="#000"/>
-                                <rect x="46" y="18" width="10" height="5" fill="#000"/>
-                                <rect x="46" y="57" width="10" height="5" fill="#000"/>
-                                <!-- Small India text baseline -->
-                                <text x="40" y="72" font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold" fill="#000">INDIA</text>
+                        <!-- ISI Mark -->
+                        <div class="rp-bv-isi-cell">
+                            <div class="rp-bv-isi-std">IS:1180:2014 PART 1</div>
+                            <svg viewBox="0 0 80 80" width="66" height="66" xmlns="http://www.w3.org/2000/svg" style="display:block;margin:3px auto;">
+                                <rect x="3" y="3" width="74" height="74" rx="8" ry="8" fill="none" stroke="#1a1a1a" stroke-width="3"/>
+                                <rect x="7" y="7" width="66" height="66" rx="5" ry="5" fill="none" stroke="#1a1a1a" stroke-width="1.5"/>
+                                <rect x="11" y="20" width="6" height="40" fill="#1a1a1a"/>
+                                <rect x="9"  y="18" width="10" height="5" fill="#1a1a1a"/>
+                                <rect x="9"  y="57" width="10" height="5" fill="#1a1a1a"/>
+                                <path d="M24,22 Q24,18 34,18 Q44,18 44,26 Q44,32 34,34 Q24,36 24,44 Q24,52 34,52 Q44,52 44,48" fill="none" stroke="#1a1a1a" stroke-width="4" stroke-linecap="round"/>
+                                <rect x="48" y="20" width="6" height="40" fill="#1a1a1a"/>
+                                <rect x="46" y="18" width="10" height="5" fill="#1a1a1a"/>
+                                <rect x="46" y="57" width="10" height="5" fill="#1a1a1a"/>
+                                <text x="40" y="72" font-size="7" text-anchor="middle" font-family="Arial" font-weight="bold" fill="#1a1a1a">INDIA</text>
                             </svg>
-                            <div class="rp-isi-cm">CM/L-7200112687</div>
-                            <div class="rp-isi-mii">MADE IN INDIA</div>
+                            <div class="rp-bv-isi-cm">CM/L-7200112687</div>
+                            <div class="rp-bv-isi-mii">MADE IN INDIA</div>
                         </div>
 
-                        <!-- ③ VECTOR DIAGRAM — accurate Dyn11 phasor -->
-                        <div class="rp-vector-block">
-                            <div class="rp-vector-label" style="font-size:9px;font-weight:700;margin-bottom:2px;">Dyn 11</div>
-                            <svg viewBox="0 0 140 120" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:108px;">
-                                <!--
-                                  Dyn11: HV = Delta, LV = Star, clock position 11
-                                  Delta triangle: vertices at top(70,12), bottom-right(118,88), bottom-left(22,88)
-                                  Star neutral at centre of triangle base midpoint: (70,88)
-                                  LV phasors at clock 11 position (30° lag from HV)
-                                -->
-
-                                <!-- ── Delta (HV) triangle ── -->
-                                <line x1="70"  y1="12"  x2="118" y2="88" stroke="#000" stroke-width="1.5"/>
-                                <line x1="118" y1="88"  x2="22"  y2="88" stroke="#000" stroke-width="1.5"/>
-                                <line x1="22"  y1="88"  x2="70"  y2="12" stroke="#000" stroke-width="1.5"/>
-
-                                <!-- Delta vertex dots -->
-                                <circle cx="70"  cy="12"  r="2.5" fill="#000"/>
-                                <circle cx="118" cy="88"  r="2.5" fill="#000"/>
-                                <circle cx="22"  cy="88"  r="2.5" fill="#000"/>
-
-                                <!-- HV labels -->
+                        <!-- Phasor vector diagram -->
+                        <div class="rp-bv-phasor-cell">
+                            <div class="rp-bv-phasor-label" id="rp-bv-phasor-title">Dyn 11</div>
+                            <svg viewBox="0 0 140 120" xmlns="http://www.w3.org/2000/svg" style="width:140px;height:108px;">
+                                <line x1="70"  y1="12"  x2="118" y2="88" stroke="#1a1a1a" stroke-width="1.5"/>
+                                <line x1="118" y1="88"  x2="22"  y2="88" stroke="#1a1a1a" stroke-width="1.5"/>
+                                <line x1="22"  y1="88"  x2="70"  y2="12" stroke="#1a1a1a" stroke-width="1.5"/>
+                                <circle cx="70"  cy="12"  r="2.5" fill="#1a1a1a"/>
+                                <circle cx="118" cy="88"  r="2.5" fill="#1a1a1a"/>
+                                <circle cx="22"  cy="88"  r="2.5" fill="#1a1a1a"/>
                                 <text x="70"  y="9"   font-size="8" text-anchor="middle" font-family="Arial" font-weight="bold">1U</text>
                                 <text x="122" y="92"  font-size="8" text-anchor="start"  font-family="Arial" font-weight="bold">2V</text>
                                 <text x="4"   y="92"  font-size="8" text-anchor="start"  font-family="Arial" font-weight="bold">2U</text>
-
-                                <!-- ── Star (LV) — neutral at (70,88), phasors at clock 11 ── -->
-                                <!-- Dyn11: LV 1W points straight up (to top of delta) -->
-                                <!-- neutral point -->
-                                <circle cx="70" cy="88" r="2" fill="#000"/>
-
-                                <!-- 1W: up toward top vertex at (70,12) — same direction as 1U of delta -->
-                                <line x1="70" y1="88" x2="70" y2="30" stroke="#000" stroke-width="1.5"/>
-                                <circle cx="70" cy="30" r="2" fill="#000"/>
+                                <circle cx="70" cy="88" r="2" fill="#1a1a1a"/>
+                                <line x1="70" y1="88" x2="70" y2="30" stroke="#1a1a1a" stroke-width="1.5"/>
+                                <circle cx="70" cy="30" r="2" fill="#1a1a1a"/>
                                 <text x="73" y="28" font-size="8" text-anchor="start" font-family="Arial" font-weight="bold">1W</text>
-
-                                <!-- 2W: lower-right, 120° from 1W -->
-                                <line x1="70" y1="88" x2="104" y2="107" stroke="#000" stroke-width="1.5"/>
-                                <circle cx="104" cy="107" r="2" fill="#000"/>
+                                <line x1="70" y1="88" x2="104" y2="107" stroke="#1a1a1a" stroke-width="1.5"/>
+                                <circle cx="104" cy="107" r="2" fill="#1a1a1a"/>
                                 <text x="106" y="110" font-size="8" text-anchor="start" font-family="Arial" font-weight="bold">2W</text>
-
-                                <!-- 1V: lower-left, 240° from 1W -->
-                                <line x1="70" y1="88" x2="36" y2="107" stroke="#000" stroke-width="1.5"/>
-                                <circle cx="36" cy="107" r="2" fill="#000"/>
+                                <line x1="70" y1="88" x2="36" y2="107" stroke="#1a1a1a" stroke-width="1.5"/>
+                                <circle cx="36" cy="107" r="2" fill="#1a1a1a"/>
                                 <text x="20" y="110" font-size="8" text-anchor="start" font-family="Arial" font-weight="bold">1V</text>
-
-                                <!-- CONVENTIONAL box -->
-                                <rect x="30" y="112" width="80" height="10" fill="none" stroke="#000" stroke-width="1"/>
+                                <rect x="30" y="112" width="80" height="10" fill="none" stroke="#1a1a1a" stroke-width="1"/>
                                 <text x="70" y="120" font-size="6.5" text-anchor="middle" font-family="Arial" font-weight="bold">CONVENTIONAL</text>
                             </svg>
-                            <div class="rp-guarantee">GAURANTEE 60 MONTHS FROM THE DATE OF INSTALLATION AND 66 MONTHS FROM THE DATE OF SUPPLY</div>
+                            <div class="rp-bv-guarantee">GUARANTEE 60 MONTHS FROM THE DATE OF INSTALLATION AND 66 MONTHS FROM THE DATE OF SUPPLY</div>
                         </div>
 
                     </div>
-                    <!-- end rp-bottom-section -->
-
-                    <!-- Plate width indicator -->
-                    <div class="rp-width-bar">
-                        <div class="rp-width-line"></div>
-                        <span class="rp-width-num">105</span>
-                        <div class="rp-width-line"></div>
-                    </div>
+                    <!-- end rp-bv-bottom -->
 
                 </div>
-                <!-- end rp-plate -->
+                <!-- end rp-plate-bv -->
                 </div>
                 <!-- end ratingPlateExport -->
+
+                <!-- Plate Settings (hidden on print) -->
+                <div class="rp-bv-settings-bar">
+                    <div class="rp-bv-settings-title">⚙ Plate Settings (not printed)</div>
+                    <div class="rp-bv-settings-row">
+                        <label>Company Name</label>
+                        <input type="text" id="rp-set-company" placeholder="YOUR COMPANY NAME" oninput="updateRPSettings()">
+                    </div>
+                    <div class="rp-bv-settings-row">
+                        <label>Address Line 1</label>
+                        <input type="text" id="rp-set-addr1" placeholder="ADDRESS LINE 1" oninput="updateRPSettings()">
+                    </div>
+                    <div class="rp-bv-settings-row">
+                        <label>Address Line 2</label>
+                        <input type="text" id="rp-set-addr2" placeholder="CITY – PIN, STATE" oninput="updateRPSettings()">
+                    </div>
+                    <div class="rp-bv-settings-row">
+                        <label>Logo Short Name</label>
+                        <input type="text" id="rp-set-logo" placeholder="YOUR CO." oninput="updateRPSettings()">
+                    </div>
+                    <div class="rp-bv-settings-row">
+                        <label>Serial No.</label>
+                        <input type="text" id="rp-set-slno" placeholder="001/01/2026" oninput="updateRPSettings()">
+                    </div>
+                    <div class="rp-bv-settings-row">
+                        <label>Mfg. Year</label>
+                        <input type="text" id="rp-set-mfg" placeholder="2026" oninput="updateRPSettings()">
+                    </div>
+                </div>
 
                 <!-- Export buttons -->
                 <div class="rp-export-bar">
@@ -971,6 +897,8 @@
     </main>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="renderer.js"></script>
 </body>
 </html>
