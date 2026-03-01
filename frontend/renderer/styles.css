@@ -1957,3 +1957,72 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
     -moz-appearance: textfield;
 }
+/* ═══════════════════════════════════════════════════════
+   WINDING COMPARE — 3-column side-by-side table
+   ═══════════════════════════════════════════════════════ */
+.tr-winding-compare-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.tr-winding-compare {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+.tr-winding-compare th,
+.tr-winding-compare td {
+    padding: 6px 10px;
+    font-size: 12.5px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    vertical-align: middle;
+}
+
+.tr-winding-compare .col-param {
+    width: 44%;
+    color: #9bacc4;
+    font-weight: 500;
+}
+
+.tr-winding-compare .col-winding {
+    width: 18%;
+    text-align: right;
+    font-family: 'Consolas', monospace;
+    font-size: 12px;
+    color: #cde;
+}
+
+.tr-winding-compare thead th.col-winding {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 10px;
+    letter-spacing: 0.05em;
+}
+
+.tr-winding-compare thead th.col-lv1 { color: #f0b840; border-bottom: 2px solid #c09030; }
+.tr-winding-compare thead th.col-lv2 { color: #d070e8; border-bottom: 2px solid #a050c0; }
+.tr-winding-compare thead th.col-hv  { color: #60b8f0; border-bottom: 2px solid #3080c0; }
+
+/* Alternating rows */
+.tr-winding-compare tbody tr:nth-child(even) td {
+    background: rgba(255,255,255,0.018);
+}
+.tr-winding-compare tbody tr:hover td {
+    background: rgba(100,160,220,0.08);
+}
+
+/* Section divider rows */
+.tr-winding-compare tr.tr-section-divider td {
+    background: rgba(60,80,120,0.3);
+    color: #7a9bcc;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    padding: 5px 10px;
+    border-top: 1px solid rgba(100,140,200,0.25);
+    border-bottom: 1px solid rgba(100,140,200,0.25);
+    text-align: center;
+}
