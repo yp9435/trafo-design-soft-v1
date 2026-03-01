@@ -153,6 +153,18 @@
                                         <td><input type="number" id="lv2radPar" name="lv2radPar" min="1" value="1" aria-label="LV2 Radial Parallel"></td>
                                         <td><input type="number" id="hvradPar"  name="hvradPar"  min="1" value="1" aria-label="HV Radial Parallel"></td>
                                     </tr>
+                                    <tr>
+                                        <th scope="row">Number of Layers</th>
+                                        <td><input type="number" id="lv1Layers" name="lv1Layers" min="1" value="1" aria-label="LV1 Number of Layers"></td>
+                                        <td><input type="number" id="lv2Layers" name="lv2Layers" min="1" value="1" aria-label="LV2 Number of Layers"></td>
+                                        <td><input type="number" id="hvLayers"  name="hvLayers"  min="1" value="1" aria-label="HV Number of Layers"></td>
+                                    </tr>
+                                    <tr>
+                                        <th scope="row">Window Height (mm)</th>
+                                        <td><input type="number" id="lv1WindowHeight" name="lv1WindowHeight" min="1" placeholder="mm" aria-label="LV1 Window Height"></td>
+                                        <td><input type="number" id="lv2WindowHeight" name="lv2WindowHeight" min="1" placeholder="mm" aria-label="LV2 Window Height"></td>
+                                        <td><input type="number" id="hvWindowHeight"  name="hvWindowHeight"  min="1" placeholder="mm" aria-label="HV Window Height"></td>
+                                    </tr>
                                 </tbody>
                             </table>
 
@@ -171,7 +183,7 @@
                                         <td>
                                             <select id="coreMaterialType" name="coreMaterialType" aria-label="Core Material Type">
                                                 <option value="CRGO">CRGO (Silicon Steel)</option>
-                                                <option value="CRNO">CRNO (Amorphous / Low-loss)</option>
+                                                <option value="CRNO">CRNO (Amorphous)</option>
                                             </select>
                                         </td>
                                     </tr>
@@ -336,106 +348,59 @@
 
                     <div class="tr-section-header">SECTION 2: WINDING DESIGN</div>
 
-                    <div class="winding-sub-tab-bar">
-                        <button class="winding-sub-tab active" data-winding-tab="lv1" type="button">LV1</button>
-                        <button class="winding-sub-tab" data-winding-tab="lv2" type="button">LV2</button>
-                        <button class="winding-sub-tab" data-winding-tab="hv" type="button">HV</button>
+                    <!-- 3-column side-by-side comparison table -->
+                    <div class="tr-table-wrapper tr-winding-compare-wrap">
+                        <table class="tr-data-table tr-winding-compare">
+                            <thead>
+                                <tr>
+                                    <th class="col-param">Parameter</th>
+                                    <th class="col-winding col-lv1">LV1</th>
+                                    <th class="col-winding col-lv2">LV2</th>
+                                    <th class="col-winding col-hv">HV</th>
+                                </tr>
+                            </thead>
+                            <tbody id="windingCompareBody">
+                                <!-- populated by outputRenderer.js populateWindingCompare() -->
+                                <tr><td class="col-param">Voltage per Phase</td><td id="wc-lv1-phaseV">—</td><td id="wc-lv2-phaseV">—</td><td id="wc-hv-phaseV">—</td></tr>
+                                <tr><td class="col-param">Current per Phase</td><td id="wc-lv1-curPhase">—</td><td id="wc-lv2-curPhase">—</td><td id="wc-hv-curPhase">—</td></tr>
+                                <tr><td class="col-param">Turns per Phase</td><td id="wc-lv1-turns">—</td><td id="wc-lv2-turns">—</td><td id="wc-hv-turns">—</td></tr>
+                                <tr><td class="col-param">Connection</td><td id="wc-lv1-conn">—</td><td id="wc-lv2-conn">—</td><td id="wc-hv-conn">—</td></tr>
+                                <tr><td class="col-param">Conductor Material</td><td id="wc-lv1-mat">—</td><td id="wc-lv2-mat">—</td><td id="wc-hv-mat">—</td></tr>
+                                <tr><td class="col-param">Number of Layers</td><td id="wc-lv1-layers">—</td><td id="wc-lv2-layers">—</td><td id="wc-hv-layers">—</td></tr>
+                                <tr><td class="col-param">Turns per Layer</td><td id="wc-lv1-tpL">—</td><td id="wc-lv2-tpL">—</td><td id="wc-hv-tpL">—</td></tr>
+                                <tr><td class="col-param">Axial Parallel (Np)</td><td id="wc-lv1-np">—</td><td id="wc-lv2-np">—</td><td id="wc-hv-np">—</td></tr>
+                                <tr><td class="col-param">Radial Parallel (Nr)</td><td id="wc-lv1-nr">—</td><td id="wc-lv2-nr">—</td><td id="wc-hv-nr">—</td></tr>
+                                <tr><td class="col-param">Total Parallel (Np × Nr)</td><td id="wc-lv1-totalPar">—</td><td id="wc-lv2-totalPar">—</td><td id="wc-hv-totalPar">—</td></tr>
+                                <tr class="tr-section-divider"><td colspan="4">Window &amp; Insulation</td></tr>
+                                <tr><td class="col-param">Window Height</td><td id="wc-lv1-winH">—</td><td id="wc-lv2-winH">—</td><td id="wc-hv-winH">—</td></tr>
+                                <tr><td class="col-param">End Clearance</td><td id="wc-lv1-endClr">—</td><td id="wc-lv2-endClr">—</td><td id="wc-hv-endClr">—</td></tr>
+                                <tr><td class="col-param">Net Winding Length</td><td id="wc-lv1-windLen">—</td><td id="wc-lv2-windLen">—</td><td id="wc-hv-windLen">—</td></tr>
+                                <tr><td class="col-param">Number of Ducts</td><td id="wc-lv1-ducts">—</td><td id="wc-lv2-ducts">—</td><td id="wc-hv-ducts">—</td></tr>
+                                <tr class="tr-section-divider"><td colspan="4">Conductor Dimensions</td></tr>
+                                <tr><td class="col-param">Conductor Breadth (bare / ins.)</td><td id="wc-lv1-b">—</td><td id="wc-lv2-b">—</td><td id="wc-hv-b">—</td></tr>
+                                <tr><td class="col-param">Conductor Height (bare / ins.)</td><td id="wc-lv1-h">—</td><td id="wc-lv2-h">—</td><td id="wc-hv-h">—</td></tr>
+                                <tr><td class="col-param">Net Conductor Area (mm²)</td><td id="wc-lv1-csArea">—</td><td id="wc-lv2-csArea">—</td><td id="wc-hv-csArea">—</td></tr>
+                                <tr><td class="col-param">Current Density (A/mm²)</td><td id="wc-lv1-cd">—</td><td id="wc-lv2-cd">—</td><td id="wc-hv-cd">—</td></tr>
+                                <tr><td class="col-param">Inter-Layer Insulation (mm)</td><td id="wc-lv1-interIns">—</td><td id="wc-lv2-interIns">—</td><td id="wc-hv-interIns">—</td></tr>
+                                <tr><td class="col-param">Radial Build (mm)</td><td id="wc-lv1-radThick">—</td><td id="wc-lv2-radThick">—</td><td id="wc-hv-radThick">—</td></tr>
+                                <tr class="tr-section-divider"><td colspan="4">Electrical Parameters</td></tr>
+                                <tr><td class="col-param">Mean Turn Length / LMT (m)</td><td id="wc-lv1-lmt">—</td><td id="wc-lv2-lmt">—</td><td id="wc-hv-lmt">—</td></tr>
+                                <tr><td class="col-param">Total Wire Length (m)</td><td id="wc-lv1-wl">—</td><td id="wc-lv2-wl">—</td><td id="wc-hv-wl">—</td></tr>
+                                <tr><td class="col-param">Resistance @ 75°C (Ω)</td><td id="wc-lv1-R75">—</td><td id="wc-lv2-R75">—</td><td id="wc-hv-R75">—</td></tr>
+                                <tr class="tr-section-divider"><td colspan="4">Weight &amp; Losses</td></tr>
+                                <tr><td class="col-param">Bare / Ins. / Proc. Weight (kg)</td><td id="wc-lv1-wt">—</td><td id="wc-lv2-wt">—</td><td id="wc-hv-wt">—</td></tr>
+                                <tr><td class="col-param">Stray Loss (%)</td><td id="wc-lv1-stray">—</td><td id="wc-lv2-stray">—</td><td id="wc-hv-stray">—</td></tr>
+                                <tr><td class="col-param">Load Loss (W)</td><td id="wc-lv1-ll">—</td><td id="wc-lv2-ll">—</td><td id="wc-hv-ll">—</td></tr>
+                                <tr><td class="col-param">Winding Temp. Gradient (°C)</td><td id="wc-lv1-grad">—</td><td id="wc-lv2-grad">—</td><td id="wc-hv-grad">—</td></tr>
+                            </tbody>
+                        </table>
                     </div>
 
-                    <!-- LV1 -->
-                    <div id="winding-lv1" class="winding-sub-content">
-                        <div class="tr-table-wrapper">
-                            <table class="tr-data-table">
-                                <thead>
-                                    <tr><th class="col-param">Parameter</th><th class="col-value">Value</th></tr>
-                                </thead>
-                                <tbody id="windingLV1Body">
-                                    <tr><td class="col-param">Voltage per Phase</td><td class="col-value">190 / √3 V</td></tr>
-                                    <tr><td class="col-param">Current per Phase</td><td class="col-value">15.2 A</td></tr>
-                                    <tr><td class="col-param">Turns per Phase</td><td class="col-value">23 turns</td></tr>
-                                    <tr><td class="col-param">Number of Layers</td><td class="col-value">1</td></tr>
-                                    <tr><td class="col-param">Turns per Layer</td><td class="col-value">23</td></tr>
-                                    <tr><td class="col-param">Number of Parallel Conductors</td><td class="col-value">1</td></tr>
-                                    <tr><td class="col-param">Conductor Breadth</td><td class="col-value">7 mm &amp; 7.1 mm</td></tr>
-                                    <tr><td class="col-param">Conductor Height</td><td class="col-value">1.5 mm &amp; 1.6 mm</td></tr>
-                                    <tr><td class="col-param">Total Cross Section</td><td class="col-value">10.5 mm²</td></tr>
-                                    <tr><td class="col-param">Current Density</td><td class="col-value">1.45 A/mm²</td></tr>
-                                    <tr><td class="col-param">Inter Layer Insulation</td><td class="col-value">-0.09</td></tr>
-                                    <tr><td class="col-param">Radial Thickness</td><td class="col-value">2 mm</td></tr>
-                                    <tr><td class="col-param">Mean Turn Length (LMT)</td><td class="col-value">0.5746 m</td></tr>
-                                    <tr><td class="col-param">Wire Length</td><td class="col-value">40 m</td></tr>
-                                    <tr><td class="col-param">Resistance per Phase at 75°C</td><td class="col-value">0.023 Ω</td></tr>
-                                    <tr><td class="col-param">Bare / Insulated / Procurement Weight</td><td class="col-value">3.7 / 3.76 / 3.8 kg</td></tr>
-                                    <tr><td class="col-param">Stray Loss</td><td class="col-value">0.004 %</td></tr>
-                                    <tr><td class="col-param">Load Loss</td><td class="col-value">20 W</td></tr>
-                                    <tr><td class="col-param">Winding Gradient</td><td class="col-value">7.5 °C</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- LV2 -->
-                    <div id="winding-lv2" class="winding-sub-content hidden">
-                        <div class="tr-table-wrapper">
-                            <table class="tr-data-table">
-                                <thead>
-                                    <tr><th class="col-param">Parameter</th><th class="col-value">Value</th></tr>
-                                </thead>
-                                <tbody id="windingLV2Body">
-                                    <tr><td class="col-param">Voltage per Phase</td><td class="col-value">415 / √3 V</td></tr>
-                                    <tr><td class="col-param">Current per Phase</td><td class="col-value">12.6 A</td></tr>
-                                    <tr><td class="col-param">Turns per Phase</td><td class="col-value">50 turns</td></tr>
-                                    <tr><td class="col-param">Number of Layers</td><td class="col-value">1</td></tr>
-                                    <tr><td class="col-param">Turns per Layer</td><td class="col-value">50</td></tr>
-                                    <tr><td class="col-param">Number of Parallel Conductors</td><td class="col-value">1</td></tr>
-                                    <tr><td class="col-param">Conductor Breadth</td><td class="col-value">6 mm &amp; 6.1 mm</td></tr>
-                                    <tr><td class="col-param">Conductor Height</td><td class="col-value">1.4 mm &amp; 1.5 mm</td></tr>
-                                    <tr><td class="col-param">Total Cross Section</td><td class="col-value">8.4 mm²</td></tr>
-                                    <tr><td class="col-param">Current Density</td><td class="col-value">1.50 A/mm²</td></tr>
-                                    <tr><td class="col-param">Inter Layer Insulation</td><td class="col-value">-0.07</td></tr>
-                                    <tr><td class="col-param">Radial Thickness</td><td class="col-value">2 mm</td></tr>
-                                    <tr><td class="col-param">Mean Turn Length (LMT)</td><td class="col-value">0.6012 m</td></tr>
-                                    <tr><td class="col-param">Wire Length</td><td class="col-value">90 m</td></tr>
-                                    <tr><td class="col-param">Resistance per Phase at 75°C</td><td class="col-value">0.061 Ω</td></tr>
-                                    <tr><td class="col-param">Bare / Insulated / Procurement Weight</td><td class="col-value">2.9 / 2.95 / 3.0 kg</td></tr>
-                                    <tr><td class="col-param">Stray Loss</td><td class="col-value">0.005 %</td></tr>
-                                    <tr><td class="col-param">Load Loss</td><td class="col-value">18 W</td></tr>
-                                    <tr><td class="col-param">Winding Gradient</td><td class="col-value">6.8 °C</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- HV -->
-                    <div id="winding-hv" class="winding-sub-content hidden">
-                        <div class="tr-table-wrapper">
-                            <table class="tr-data-table">
-                                <thead>
-                                    <tr><th class="col-param">Parameter</th><th class="col-value">Value</th></tr>
-                                </thead>
-                                <tbody id="windingHVBody">
-                                    <tr><td class="col-param">Voltage per Phase</td><td class="col-value">11000 / √3 V</td></tr>
-                                    <tr><td class="col-param">Current per Phase</td><td class="col-value">2.62 A</td></tr>
-                                    <tr><td class="col-param">Turns per Phase</td><td class="col-value">1320 turns</td></tr>
-                                    <tr><td class="col-param">Number of Layers</td><td class="col-value">8</td></tr>
-                                    <tr><td class="col-param">Turns per Layer</td><td class="col-value">165</td></tr>
-                                    <tr><td class="col-param">Number of Parallel Conductors</td><td class="col-value">1</td></tr>
-                                    <tr><td class="col-param">Conductor Breadth</td><td class="col-value">1.8 mm &amp; 1.9 mm</td></tr>
-                                    <tr><td class="col-param">Conductor Height</td><td class="col-value">1.0 mm &amp; 1.1 mm</td></tr>
-                                    <tr><td class="col-param">Total Cross Section</td><td class="col-value">1.8 mm²</td></tr>
-                                    <tr><td class="col-param">Current Density</td><td class="col-value">1.46 A/mm²</td></tr>
-                                    <tr><td class="col-param">Inter Layer Insulation</td><td class="col-value">0.50</td></tr>
-                                    <tr><td class="col-param">Radial Thickness</td><td class="col-value">18 mm</td></tr>
-                                    <tr><td class="col-param">Mean Turn Length (LMT)</td><td class="col-value">0.7820 m</td></tr>
-                                    <tr><td class="col-param">Wire Length</td><td class="col-value">3082 m</td></tr>
-                                    <tr><td class="col-param">Resistance per Phase at 75°C</td><td class="col-value">28.4 Ω</td></tr>
-                                    <tr><td class="col-param">Bare / Insulated / Procurement Weight</td><td class="col-value">4.1 / 4.2 / 4.3 kg</td></tr>
-                                    <tr><td class="col-param">Stray Loss</td><td class="col-value">0.003 %</td></tr>
-                                    <tr><td class="col-param">Load Loss</td><td class="col-value">22 W</td></tr>
-                                    <tr><td class="col-param">Winding Gradient</td><td class="col-value">8.1 °C</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
+                    <!-- Keep original per-winding tbody IDs hidden — still populated by legacy code -->
+                    <div style="display:none">
+                        <tbody id="windingLV1Body"></tbody>
+                        <tbody id="windingLV2Body"></tbody>
+                        <tbody id="windingHVBody"></tbody>
                     </div>
 
                 </div>
@@ -479,15 +444,22 @@
                                 <thead>
                                     <tr>
                                         <th>Category</th>
-                                        <th>Material / Grade</th>
+                                        <th>Material</th>
+                                        <th>Grade</th>
                                         <th class="col-num">Quantity (kg)</th>
                                         <th class="col-num">Rate (₹/kg)</th>
-                                        <th>Price Source</th>
                                         <th class="col-num">Total Cost (₹)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="bomCoreBody">
-                                    <tr><td colspan="6" style="text-align:center;opacity:.5;">Run calculation to populate</td></tr>
+                                    <tr>
+                                        <td>Core</td>
+                                        <td>CRGO-Silicon Steel</td>
+                                        <td>M4</td>
+                                        <td class="col-num">285</td>
+                                        <td class="col-num">₹ 210</td>
+                                        <td class="col-num bom-cost">₹ 59,850</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -502,14 +474,37 @@
                                     <tr>
                                         <th>Winding</th>
                                         <th>Material</th>
+                                        <th>Conductor Type</th>
                                         <th class="col-num">Weight (kg)</th>
                                         <th class="col-num">Rate (₹/kg)</th>
-                                        <th>Price Source</th>
                                         <th class="col-num">Total Cost (₹)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="bomWindingBody">
-                                    <tr><td colspan="6" style="text-align:center;opacity:.5;">Run calculation to populate</td></tr>
+                                    <tr>
+                                        <td class="bom-winding-label lv">LV1</td>
+                                        <td>Copper</td>
+                                        <td>Rectangular</td>
+                                        <td class="col-num">45 kg</td>
+                                        <td class="col-num">₹ 850</td>
+                                        <td class="col-num bom-cost">₹ 38,250</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bom-winding-label lv">LV2</td>
+                                        <td>Copper</td>
+                                        <td>Rectangular</td>
+                                        <td class="col-num">42 kg</td>
+                                        <td class="col-num">₹ 850</td>
+                                        <td class="col-num bom-cost">₹ 35,700</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="bom-winding-label hv">HV</td>
+                                        <td>Copper</td>
+                                        <td>Round</td>
+                                        <td class="col-num">55 kg</td>
+                                        <td class="col-num">₹ 850</td>
+                                        <td class="col-num bom-cost">₹ 46,750</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -524,20 +519,27 @@
                         <h4 class="bom-cost-title">Cost Summary</h4>
 
                         <div class="bom-cost-row">
-                            <span class="bom-cost-label">Active Part Weight:</span>
-                            <span class="bom-cost-val" id="bomActiveWeight">—</span>
+                            <span class="bom-cost-label">Core Cost:</span>
+                            <span class="bom-cost-val">₹ 59,850</span>
                         </div>
                         <div class="bom-cost-row">
-                            <span class="bom-cost-label">Enclosure Weight:</span>
-                            <span class="bom-cost-val" id="bomEnclosureWeight">—</span>
+                            <span class="bom-cost-label">Winding Cost:</span>
+                            <span class="bom-cost-val">₹ 1,20,700</span>
+                        </div>
+                        <div class="bom-cost-row">
+                            <span class="bom-cost-label">Insulation &amp; Misc.:</span>
+                            <span class="bom-cost-val">₹ 19,250</span>
                         </div>
 
                         <div class="bom-cost-total-row">
                             <span class="bom-cost-total-label">TOTAL MATERIAL COST:</span>
-                            <span class="bom-cost-total-val" id="bomTotalCost">—</span>
+                            <span class="bom-cost-total-val">₹ 1,99,800</span>
                         </div>
 
-                        <p class="bom-margin-note">Currency: <strong id="bomCurrency">INR</strong></p>
+                        <p class="bom-margin-note">Estimated Manufacturing Margin (1290)</p>
+
+                        <div class="bom-final-label">Final Estimated Cost:</div>
+                        <div class="bom-final-val">₹ 2,23,776</div>
                     </div>
                 </div>
 
@@ -899,6 +901,14 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-<script src="renderer.js"></script>
+<!-- Module load order: each file depends only on those above it -->
+<script src="js/utils.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/apiClient.js"></script>
+<script src="js/formReader.js"></script>
+<script src="js/outputRenderer.js"></script>
+<script src="js/layoutDiagrams.js"></script>
+<script src="js/validation.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
