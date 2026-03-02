@@ -302,82 +302,43 @@ function populateWindingCompare(inp, result) {
    RATING PLATE — populate from calculation
    ============================================= */
 function populateRatingPlate(inp, result) {
-    // All rating plate data comes from the backend's rating_plate object.
-    // Frontend only provides static company/address/sl.no from the settings panel.
+    // All values from backend rating_plate object (rating_plate.py).
+    // Company details are hardcoded for Bhavitron — no settings panel.
     let rp = result.ratingPlate || {};
-    let s  = result.steps;
     let pf = result.performance;
-    let cm = result.coreMatMeta;
 
-    // ── Title line ────────────────────────────────────────────────────────
-    let phases = inp.phases === 1 ? "1 PHASE" : "3 PHASE";
-    setText("rp-bv-title",  phases + " " + matCode(inp.lv1mat) + " WOUND DRY TYPE ISOLATION TRANSFORMER");
-    setText("rp-bv-spec",   "IS 1180 : 2014 PART 1  ·  VECTOR GROUP: " + (rp.vector_symbol || inp.vectorGroup || "—").toUpperCase());
-    setText("rp-bv-rating", rp.rating_kva  || (inp.ratedPower + " KVA"));
-    setText("rp-bv-freq",   rp.frequency_hz || ((inp.frequency || 50) + " HZ"));
-    setText("rp-bv-imp",    rp.impedance_percentage || "—");
+    // ── Electrical data — all from backend rp object ──────────────────
+    setText("rp-bv-rating", rp.rating_kva        || (inp.ratedPower + " KVA"));
+    setText("rp-bv-freq",   rp.frequency_hz       || ((inp.frequency || 50) + " HZ"));
+    setText("rp-bv-imp",    rp.impedance_percentage || "<5%");
 
-    // ── Primary / secondary displays — use backend strings directly ───────
-    let primary = rp.primary    || {};
+    // ── Primary / secondary — use backend display strings directly ────
+    let primary = rp.primary     || {};
     let sec1    = rp.secondary_1 || {};
     let sec2    = rp.secondary_2 || {};
 
     setText("rp-bv-primary", primary.display || "—");
     setText("rp-bv-sec1",    sec1.display    || "—");
     setText("rp-bv-sec2",    sec2.display    || "—");
-    setText("rp-bv-vector",  (rp.vector_symbol || inp.vectorGroup || "—").toUpperCase());
+    setText("rp-bv-vector",  (rp.vector_symbol || "—").toUpperCase());
 
-    // ── Weight, insulation class ─────────────────────────────────────────
+    // ── Weight — from backend rp.weight (bom.py active+enclosure) ────
     setText("rp-bv-weight", rp.weight || "—");
-    setText("rp-bv-insul",  "CLASS " + (inp.insulationClass || "—").toUpperCase());
 
-    // ── Losses ───────────────────────────────────────────────────────────
-    setText("rp-bv-noload",   (pf && pf.coreLoss      ? r0(pf.coreLoss)      : "—") + " W");
-    setText("rp-bv-fullload", (pf && pf.totalLoadLoss ? r0(pf.totalLoadLoss) : "—") + " W");
+    // ── SL. No. — from backend (null by default, handwritten on plate) ─
+    setText("rp-bv-slno", rp.sl_no || "—");
 
-    // ── Core material ────────────────────────────────────────────────────
-    if (cm) setText("rp-bv-coremat", cm.type + " · Grade " + cm.grade);
-
-    // ── Phasor title ─────────────────────────────────────────────────────
-    setText("rp-bv-phasor-title", (rp.vector_symbol || inp.vectorGroup || "Dyn11").toUpperCase());
-
-    // ── Mfg year — use backend value, fall back to current year ──────────
+    // ── Mfg. Year — from backend rp.mfg_year ─────────────────────────
     let mfgEl = document.getElementById("rp-bv-mfg");
     if (mfgEl) {
-        if (rp.mfg_year) {
-            mfgEl.textContent = rp.mfg_year;
-        } else if (!mfgEl.textContent || mfgEl.textContent === "—") {
-            mfgEl.textContent = new Date().getFullYear();
-        }
+        mfgEl.textContent = rp.mfg_year || new Date().getFullYear();
     }
-}
-
-/* ── Live settings updater (company name, address, etc.) ── */
-function updateRPSettings() {
-    function val(id) {
-        let el = document.getElementById(id);
-        return el ? el.value.trim() : "";
-    }
-
-    let company = val("rp-set-company");
-    let addr1   = val("rp-set-addr1");
-    let addr2   = val("rp-set-addr2");
-    let logo    = val("rp-set-logo");
-    let slno    = val("rp-set-slno");
-    let mfg     = val("rp-set-mfg");
-
-    if (company) setTextUpper("rp-bv-company-name",  company);
-    if (addr1)   setTextUpper("rp-bv-company-addr1", addr1);
-    if (addr2)   setTextUpper("rp-bv-company-addr2", addr2);
-    if (logo)    setTextUpper("rp-bv-logo-label",    logo);
-    if (slno)    setText("rp-bv-slno", slno);
-    if (mfg)     setText("rp-bv-mfg",  mfg);
 }
 
 /* =============================================
    POPULATE CALCULATED OUTPUTS
    ============================================= */
-function populateOutput(data) {
+function populateOutput(inp, data) {
     let w  = data.windingSummary;
     let cd = data.coreDesign;
     let pf = data.performance;
@@ -390,8 +351,8 @@ function populateOutput(data) {
             buildOutputRow("Turns / Phase",          w.LV1.turns,           w.LV2.turns,           w.HV.turns) +
             buildOutputRow("Turns / Layer",          s.lv1TpL,              s.lv2TpL,              s.hvTpL) +
             buildOutputRow("No. of Layers",          s.lv1Layers,           s.lv2Layers,           s.hvLayers) +
-            buildOutputRow("Axial Parallel (Np)",    s.lv1Np,               s.lv2Np,               s.hvNp) +
-            buildOutputRow("Radial Parallel (Nr)",   s.lv1Nr,               s.lv2Nr,               s.hvNr) +
+            buildOutputRow("Axial Parallel (Np)",    inp.lv1axPar  || 1,    inp.lv2axPar  || 1,    inp.hvaxPar   || 1) +
+            buildOutputRow("Radial Parallel (Nr)",   inp.lv1radPar || 1,    inp.lv2radPar || 1,    inp.hvradPar  || 1) +
             buildOutputRow("Current / Phase (A)",    r2(s.lv1CurPhase),     r2(s.lv2CurPhase),     r2(s.hvCurPhase)) +
             buildOutputRow("Conductor b (mm)",       r2(s.lv1_b),           r2(s.lv2_b),           r2(s.hv_b)) +
             buildOutputRow("Conductor h (mm)",       r2(s.lv1_h),           r2(s.lv2_h),           r2(s.hv_h)) +
@@ -406,6 +367,10 @@ function populateOutput(data) {
     }
 
     /* ---- Core Design ---- */
+    // core_design.py: initial_volts_per_turn, turns_per_phase, volts_per_turn,
+    //                 net_core_area, gross_core_area, core_dimensions
+    // final_core_design.py: window_height, tongue_width(yoke), center_distance,
+    //                       core_length, core_weight, core_loss, enclosure dims
     let coreEl = document.getElementById("coreOutput");
     if (coreEl) {
         coreEl.innerHTML =
@@ -424,24 +389,25 @@ function populateOutput(data) {
     /* ---- Performance ---- */
     let perfEl = document.getElementById("performanceOutput");
     if (perfEl) {
+        // Only fields from backend: core_loss (final_core), load_loss sum (windings)
+        // Impedance Voltage and Voltage Regulation are NOT in any backend return dict — removed.
         perfEl.innerHTML =
-            kvRow("Core Loss",        r0(pf.coreLoss)       + " W") +
-            kvRow("Total Load Loss",  r0(pf.totalLoadLoss)  + " W") +
-            kvRow("Total Loss",       r0(pf.totalLoss)      + " W") +
-            kvRow("Impedance Voltage", pf.impedance          + " %") +
-            kvRow("Voltage Regulation", pf.regulation        + " %");
+            kvRow("Core Loss",       r0(pf.coreLoss)      + " W") +
+            kvRow("Total Load Loss", r0(pf.totalLoadLoss) + " W") +
+            kvRow("Total Loss",      r0(pf.totalLoss)     + " W");
     }
 
     /* ---- Core Material Summary ---- */
     let cmEl = document.getElementById("coreMaterialOutput");
     if (cmEl && data.coreMatMeta) {
         let cm = data.coreMatMeta;
+        // Only show fields that exist in final_core_design.py return dict:
+        // density, build_factor, specific_loss, core_weight, core_loss
+        // Sheet Thickness and Stack Factor are NOT backend fields — removed.
         cmEl.innerHTML =
             kvRow("Material Type",        cm.type) +
             kvRow("Grade / Standard",     cm.grade) +
-            kvRow("Sheet Thickness",      cm.thickness) +
             kvRow("Density",              cm.density) +
-            kvRow("Stack Factor",         cm.stackFactor) +
             kvRow("Specific Loss (W/kg)", r3(cm.specLoss)   + " W/kg") +
             kvRow("Build Factor",         cm.buildFactor) +
             kvRow("Core Weight",          r1(s.coreWeight)  + " kg") +
@@ -584,8 +550,8 @@ function generateTechnicalReportPDF() {
          "Core Material",     (cm ? cm.type + " · " + cm.grade : "—")],
         ["No-Load Losses",    r0(pf.coreLoss) + " W",
          "Full-Load Losses",  r0(pf.totalLoadLoss) + " W"],
-        ["Impedance Voltage", r2(pf.impedance) + " %",
-         "Total Losses",      r0(pf.totalLoss) + " W"],
+        ["Total Losses",      r0(pf.totalLoss) + " W",
+         "",                  ""],
     ];
 
     let sy = y + 17;
@@ -756,7 +722,7 @@ function generateTechnicalReportPDF() {
         ["Net Core Flux Density (B)",          r2(inp.fluxDensity) + " T"],
         ["Net Core Area (A_net)",              r0(s.A_net) + " mm²"],
         ["Gross Core Area (A_gross)",          r0(s.A_gross) + " mm²"],
-        ["Stack Factor",                       cm ? cm.stackFactor : "—"],
+        // Stack Factor removed — not in backend return dict
         ["Core Frame — Tongue × Stack",        s.tongue + " × " + s.stack + " mm"],
         ["Window Height",                      r0(s.windowHeight) + " mm"],
         ["Yoke Height",                        r0(s.yokeHeight) + " mm"],
@@ -799,9 +765,7 @@ function generateTechnicalReportPDF() {
         paramTable([
             ["Material Type",           cm.type],
             ["Grade / Standard",        cm.grade],
-            ["Sheet Thickness",         cm.thickness],
             ["Density",                 cm.density],
-            ["Stack Factor",            String(cm.stackFactor)],
             ["Specific Loss (W/kg)",    cm.specLoss + " W/kg  @ " + r2(inp.fluxDensity) + " T"],
             ["Build Factor",            String(cm.buildFactor)],
             ["Core Weight",             r1(s.coreWeight) + " kg"],
@@ -907,7 +871,7 @@ function generateTechnicalReportPDF() {
         ["HV  Winding Load Loss",            r0(s.ll_hv)          + " W"],
         ["Total Full-Load Loss",             r0(pf.totalLoadLoss) + " W"],
         ["Total Loss (Core + Full Load)",    r0(pf.totalLoss)     + " W"],
-        ["Impedance Voltage (%)",            r2(pf.impedance)     + " %"],
+        // Impedance Voltage removed — not in backend return dict
         ["Voltage Regulation (%)",           r2(pf.regulation)    + " %"],
         ["Core Weight",                      r1(s.coreWeight)     + " kg"],
         ["LV1 Bare Conductor Weight",        r1(s.bareWt_lv1)     + " kg"],
@@ -1003,7 +967,9 @@ function populateBom(result) {
 
         rows.push(
             "<tr class=\"bom-subtotal\">" +
-            "<td colspan=\"5\"><strong>Total Conductor</strong></td>" +
+            "<td colspan=\"2\"><strong>Total Conductor</strong></td>" +
+            "<td class=\"col-num\"><strong>" + r2(wd.total_conductor_kg || 0) + " kg</strong></td>" +
+            "<td colspan=\"2\"></td>" +
             "<td class=\"col-num\"><strong>₹ " + r0(wd.total_conductor_cost || 0) + "</strong></td>" +
             "</tr>"
         );
@@ -1011,11 +977,14 @@ function populateBom(result) {
         wBody.innerHTML = rows.join("");
     }
 
-    // ── Summary card ──────────────────────────────────────────────────────────────────────
-    setText("bomActiveWeight",    r1(bm.active_part_weight_kg || 0) + " kg");
-    setText("bomEnclosureWeight", r1(bm.enclosure_weight_kg   || 0) + " kg");
-    setText("bomTotalCost",       "₹ " + r0(bm.total_cost_inr || 0));
-    setText("bomCurrency",        bm.currency || "INR");
+    // ── Summary card — all fields from bm (bom.py return dict) ─────────────────────────
+    let totalWeightKg = (bm.active_part_weight_kg || 0) + (bm.enclosure_weight_kg || 0);
+    setText("bomInsulationWeight", r2(bm.insulation_kg         || 0) + " kg");
+    setText("bomActiveWeight",     r1(bm.active_part_weight_kg || 0) + " kg");
+    setText("bomEnclosureWeight",  r1(bm.enclosure_weight_kg   || 0) + " kg");
+    setText("bomTotalWeight",      r1(totalWeightKg)                 + " kg");
+    setText("bomTotalCost",        "₹ " + r0(bm.total_cost_inr || 0));
+    setText("bomCurrency",         bm.currency || "INR");
 }
 
 /* =============================================
