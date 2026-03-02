@@ -293,52 +293,6 @@
                         </table>
                     </div>
 
-                    <div class="tr-sub-section-header">Cross Conductor Area Calculations</div>
-
-                    <div class="tr-table-wrapper">
-                        <table class="tr-data-table tr-quad-table">
-                            <thead>
-                                <tr>
-                                    <th class="col-param">Parameter</th>
-                                    <th class="col-value">Value</th>
-                                    <th class="col-param">Parameter</th>
-                                    <th class="col-value">Value</th>
-                                </tr>
-                            </thead>
-                            <tbody id="conductorBreakdownBody">
-                                <tr>
-                                    <td class="col-param">Window Height</td>
-                                    <td class="col-value">240 mm</td>
-                                    <td class="col-param">Conductor Breadth</td>
-                                    <td class="col-value">8.20 mm</td>
-                                </tr>
-                                <tr>
-                                    <td class="col-param">End Clearance</td>
-                                    <td class="col-value">11 mm</td>
-                                    <td class="col-param">Conductor Height</td>
-                                    <td class="col-value">5.10 mm</td>
-                                </tr>
-                                <tr>
-                                    <td class="col-param">Net Winding Length</td>
-                                    <td class="col-value">218 mm</td>
-                                    <td class="col-param">Corner Reduction</td>
-                                    <td class="col-value">5 mm</td>
-                                </tr>
-                                <tr>
-                                    <td class="col-param">Winding Length (eff.)</td>
-                                    <td class="col-value">218 mm</td>
-                                    <td class="col-param">Final Gross Conductor Area</td>
-                                    <td class="col-value">33.4 mm²</td>
-                                </tr>
-                                <tr>
-                                    <td class="col-param">End Clearances (total)</td>
-                                    <td class="col-value">218 mm</td>
-                                    <td class="col-param">Number of Parallel Conductors</td>
-                                    <td class="col-value">1</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
 
                 </div>
                 <!-- end tr-core-design -->
@@ -387,6 +341,7 @@
                                 <tr><td class="col-param">Mean Turn Length / LMT (m)</td><td id="wc-lv1-lmt">—</td><td id="wc-lv2-lmt">—</td><td id="wc-hv-lmt">—</td></tr>
                                 <tr><td class="col-param">Total Wire Length (m)</td><td id="wc-lv1-wl">—</td><td id="wc-lv2-wl">—</td><td id="wc-hv-wl">—</td></tr>
                                 <tr><td class="col-param">Resistance @ 75°C (Ω)</td><td id="wc-lv1-R75">—</td><td id="wc-lv2-R75">—</td><td id="wc-hv-R75">—</td></tr>
+                                <tr><td class="col-param">Resistance @ 35°C (Ω)</td><td id="wc-lv1-Rroom">—</td><td id="wc-lv2-Rroom">—</td><td id="wc-hv-Rroom">—</td></tr>
                                 <tr class="tr-section-divider"><td colspan="4">Weight &amp; Losses</td></tr>
                                 <tr><td class="col-param">Bare / Ins. / Proc. Weight (kg)</td><td id="wc-lv1-wt">—</td><td id="wc-lv2-wt">—</td><td id="wc-hv-wt">—</td></tr>
                                 <tr><td class="col-param">Stray Loss (%)</td><td id="wc-lv1-stray">—</td><td id="wc-lv2-stray">—</td><td id="wc-hv-stray">—</td></tr>
@@ -408,7 +363,7 @@
 
                 <!-- Download bar -->
                 <div class="tr-download-bar">
-                    <button class="download-btn" id="downloadPdfBtn" type="button">⬇ Download Technical Report as PDF</button>
+                    <button class="bom-action-btn" id="downloadPdfBtn" type="button">⬇ DOWNLOAD TECHNICAL REPORT AS PDF</button>
                 </div>
 
             </section>
@@ -575,21 +530,21 @@
                         <div class="ld-diagram-card">
                             <div class="ld-diagram-label">Front View — Core &amp; Winding Assembly</div>
                             <div class="ld-canvas-wrap">
-                                <canvas id="canvasFront" width="560" height="320"></canvas>
+                                <canvas id="canvasFront" width="620" height="340"></canvas>
                             </div>
                         </div>
 
                         <div class="ld-diagram-card">
                             <div class="ld-diagram-label">Side Elevation — Core Stack</div>
                             <div class="ld-canvas-wrap">
-                                <canvas id="canvasSide" width="560" height="260"></canvas>
+                                <canvas id="canvasSide" width="620" height="280"></canvas>
                             </div>
                         </div>
 
                         <div class="ld-diagram-card">
                             <div class="ld-diagram-label">Plan View — Core Footprint</div>
                             <div class="ld-canvas-wrap">
-                                <canvas id="canvasTop" width="560" height="220"></canvas>
+                                <canvas id="canvasTop" width="620" height="240"></canvas>
                             </div>
                         </div>
 
@@ -631,8 +586,8 @@
                 </div>
 
                 <div class="ld-export-bar">
-                    <button class="ld-export-btn ld-btn-pdf" id="ldExportPdf" type="button">EXPORT TO PDF</button>
-                    <button class="ld-export-btn ld-btn-svg" id="ldExportSvg" type="button">EXPORT TO SVG</button>
+                    <button class="bom-action-btn bom-print-btn" id="ldExportPdf" type="button">⬇ EXPORT TO PDF</button>
+                    <button class="bom-action-btn" id="ldExportSvg" type="button">⬇ EXPORT TO SVG</button>
                 </div>
 
             </div>
@@ -647,25 +602,30 @@
                 <div id="ratingPlateExport">
                 <div class="rp-plate-bv">
 
-                    <!-- Corner rivets -->
-                    <div class="rp-bv-rivet rp-bv-rivet-tl"></div>
-                    <div class="rp-bv-rivet rp-bv-rivet-tr"></div>
-                    <div class="rp-bv-rivet rp-bv-rivet-bl"></div>
-                    <div class="rp-bv-rivet rp-bv-rivet-br"></div>
+                    <!-- Decorative corner brackets (matching physical plate) -->
+                    <div class="rp-bv-corner rp-bv-corner-tl"></div>
+                    <div class="rp-bv-corner rp-bv-corner-tr"></div>
+                    <div class="rp-bv-corner rp-bv-corner-bl"></div>
+                    <div class="rp-bv-corner rp-bv-corner-br"></div>
 
                     <!-- HEADER: Bhavitron logo + Company name (hardcoded) -->
                     <div class="rp-bv-header">
                         <div class="rp-bv-logo-cell">
-                            <!-- Bhavitron logo: circle with cross/arrow symbol -->
-                            <svg viewBox="0 0 60 70" width="52" height="62" xmlns="http://www.w3.org/2000/svg">
-                                <circle cx="30" cy="28" r="22" fill="none" stroke="#1a1a1a" stroke-width="2.5"/>
-                                <circle cx="30" cy="28" r="15" fill="none" stroke="#1a1a1a" stroke-width="1.5"/>
-                                <line x1="30" y1="6"  x2="30" y2="50" stroke="#1a1a1a" stroke-width="2"/>
-                                <line x1="8"  y1="28" x2="52" y2="28" stroke="#1a1a1a" stroke-width="2"/>
-                                <line x1="12" y1="12" x2="48" y2="44" stroke="#1a1a1a" stroke-width="1.5"/>
-                                <line x1="48" y1="12" x2="12" y2="44" stroke="#1a1a1a" stroke-width="1.5"/>
-                                <!-- Arrow tip at top -->
-                                <polygon points="30,2 26,12 34,12" fill="#1a1a1a"/>
+                                                        <!-- Bhavitron logo matching physical plate: two circles, crosshair, diagonal slash, zigzag lightning bolt -->
+                            <svg viewBox="0 0 80 80" width="62" height="62" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Outer circle -->
+                                <circle cx="40" cy="40" r="34" fill="none" stroke="#0a0a0a" stroke-width="2.5"/>
+                                <!-- Inner circle -->
+                                <circle cx="40" cy="40" r="19" fill="none" stroke="#0a0a0a" stroke-width="2"/>
+                                <!-- Crosshair inside inner circle -->
+                                <line x1="40" y1="21" x2="40" y2="59" stroke="#0a0a0a" stroke-width="1.8"/>
+                                <line x1="21" y1="40" x2="59" y2="40" stroke="#0a0a0a" stroke-width="1.8"/>
+                                <!-- Diagonal slash from upper-right to lower-left, cutting through circles -->
+                                <line x1="58" y1="10" x2="22" y2="70" stroke="#0a0a0a" stroke-width="2.6"/>
+                                <!-- Lightning bolt zigzag: top-right segment down to mid, then lower-right with arrowhead -->
+                                <polyline points="62,14 44,40 64,64" fill="none" stroke="#0a0a0a" stroke-width="3" stroke-linejoin="miter"/>
+                                <!-- Arrowhead at bottom of bolt -->
+                                <polygon points="64,64 54,58 68,52" fill="#0a0a0a"/>
                             </svg>
                             <div class="rp-bv-logo-text">BHAVITRON</div>
                         </div>
@@ -729,8 +689,8 @@
 
                 <!-- Export buttons -->
                 <div class="rp-export-bar">
-                    <button class="rp-export-btn" id="rpExportSvg" type="button">⬇ Export as SVG</button>
-                    <button class="rp-export-btn rp-export-pdf" id="rpExportPdf" type="button">⬇ Export as PDF</button>
+                    <button class="bom-action-btn" id="rpExportSvg" type="button">⬇ EXPORT AS SVG</button>
+                    <button class="bom-action-btn bom-print-btn" id="rpExportPdf" type="button">⬇ EXPORT AS PDF</button>
                 </div>
 
             </div>

@@ -290,6 +290,11 @@ function mapApiResponse(apiResp) {
             R75_lv2 : w2.resistance_per_phase_75C || 0,
             R75_hv  : wh.resistance_per_phase_75C || 0,
 
+            // Resistance @ room temperature (35 °C) — winding_design.py resistance_at_room_temperature
+            Rroom_lv1 : w1.resistance_at_room_temperature || 0,
+            Rroom_lv2 : w2.resistance_at_room_temperature || 0,
+            Rroom_hv  : wh.resistance_at_room_temperature || 0,
+
             // Weights (bare / insulated / procurement)
             bareWt_lv1 : w1.bare_weight        || 0,
             bareWt_lv2 : w2.bare_weight        || 0,

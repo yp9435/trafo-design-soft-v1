@@ -45,33 +45,6 @@ function populateTechnicalReport(inp, result) {
         trRow("Enclosure (L × W × H)", s.enc_L + " × " + s.enc_W + " × " + s.enc_H + " mm");
     setTbody("finalCoreBody", finalCoreHtml);
 
-    // ════════════════════════════════════════════════════════════
-    //  CROSS CONDUCTOR AREA TABLE  (conductorBreakdownBody)
-    // ════════════════════════════════════════════════════════════
-    // Parallel counts: winding_design.py uses axial/radial_parallel internally
-    // but does NOT return them. Read from user input — the authoritative source.
-    let lv1TotalPar = (inp.lv1axPar || 1) * (inp.lv1radPar || 1);
-    let lv2TotalPar = (inp.lv2axPar || 1) * (inp.lv2radPar || 1);
-    let hvTotalPar  = (inp.hvaxPar  || 1) * (inp.hvradPar  || 1);
-
-    // "Winding Length (eff.)" is the same value as "Net Winding Length" — removed as duplicate.
-    let cbHtml =
-        trRow4("Window Height",          r0(s.windowHeight) + " mm",
-               "LV1 Conductor b (bare)", r2(s.lv1_b)  + " mm") +
-        trRow4("End Clearance",          r0(endClr)    + " mm",
-               "LV1 Conductor b (ins.)", r2(s.lv1_bi) + " mm") +
-        trRow4("Net Winding Length",     r0(netWindLen) + " mm",
-               "LV1 Conductor h (bare)", r2(s.lv1_h)  + " mm") +
-        trRow4("Total Parallel (LV1)",   lv1TotalPar,
-               "LV1 Conductor h (ins.)", r2(s.lv1_hi) + " mm") +
-        trRow4("Total Parallel (LV2)",   lv2TotalPar,
-               "LV1 Conductor Area",     r2(s.lv1_csActual) + " mm²") +
-        trRow4("Total Parallel (HV)",    hvTotalPar,
-               "LV2 Conductor Area",     r2(s.lv2_csActual) + " mm²") +
-        trRow4("",                       "",
-               "HV Conductor Area",      r2(s.hv_csActual)  + " mm²");
-    setTbody("conductorBreakdownBody", cbHtml);
-
     // Phase voltage labels (display only — no arithmetic, just label format)
     let lv1PhaseVLabel = (inp.lv1conn === "Y") ? inp.lv1Voltage + " / √3 V" : inp.lv1Voltage + " V";
     let lv2PhaseVLabel = (inp.lv2conn === "Y") ? inp.lv2Voltage + " / √3 V" : inp.lv2Voltage + " V";
@@ -101,6 +74,7 @@ function populateTechnicalReport(inp, result) {
                trRow("Mean Turn Length (LMT)",              r3(wnd.lmt)            + " m") +
                trRow("Total Wire Length",                   r1(wnd.wl)             + " m") +
                trRow("Resistance per Phase @ 75°C",         r4(wnd.R75)            + " Ω") +
+               trRow("Resistance per Phase @ 35°C (room)",  r4(wnd.Rroom)          + " Ω") +
                trRow("Bare / Insulated / Procurement Wt.",  r1(wnd.bareWt) + " / " + r1(wnd.insWt) + " / " + r1(wnd.procWt) + " kg") +
                trRow("Stray Loss (%)",                      r3(wnd.strayPct)       + " %") +
                trRow("Load Loss (I²R + Stray)",             r0(wnd.loadLoss)       + " W") +
@@ -114,7 +88,7 @@ function populateTechnicalReport(inp, result) {
         windowHeight: s.windowHeight,  endClearance: s.endClearance_lv1,  windingLength: s.windingLength_lv1,
         b: s.lv1_b,  bi: s.lv1_bi,  h: s.lv1_h,  hi: s.lv1_hi,
         csActual: s.lv1_csActual,  cd: s.lv1_cd,  interLayerIns: s.lv1_interLayerIns,
-        radThick: s.lv1_radThick,  lmt: s.lmt_lv1,  wl: s.wireLen_lv1,  R75: s.R75_lv1,
+        radThick: s.lv1_radThick,  lmt: s.lmt_lv1,  wl: s.wireLen_lv1,  R75: s.R75_lv1,  Rroom: s.Rroom_lv1,
         bareWt: s.bareWt_lv1,  insWt: s.insWt_lv1,  procWt: s.procWt_lv1,
         strayPct: s.strayPct_lv1,  loadLoss: s.ll_lv1,  gradient: s.gradient_lv1
     }));
@@ -126,7 +100,7 @@ function populateTechnicalReport(inp, result) {
         windowHeight: s.windowHeight,  endClearance: s.endClearance_lv2,  windingLength: s.windingLength_lv2,
         b: s.lv2_b,  bi: s.lv2_bi,  h: s.lv2_h,  hi: s.lv2_hi,
         csActual: s.lv2_csActual,  cd: s.lv2_cd,  interLayerIns: s.lv2_interLayerIns,
-        radThick: s.lv2_radThick,  lmt: s.lmt_lv2,  wl: s.wireLen_lv2,  R75: s.R75_lv2,
+        radThick: s.lv2_radThick,  lmt: s.lmt_lv2,  wl: s.wireLen_lv2,  R75: s.R75_lv2,  Rroom: s.Rroom_lv2,
         bareWt: s.bareWt_lv2,  insWt: s.insWt_lv2,  procWt: s.procWt_lv2,
         strayPct: s.strayPct_lv2,  loadLoss: s.ll_lv2,  gradient: s.gradient_lv2
     }));
@@ -138,7 +112,7 @@ function populateTechnicalReport(inp, result) {
         windowHeight: s.windowHeight,  endClearance: s.endClearance_hv,  windingLength: s.windingLength_hv,
         b: s.hv_b,  bi: s.hv_bi,  h: s.hv_h,  hi: s.hv_hi,
         csActual: s.hv_csActual,  cd: s.hv_cd,  interLayerIns: s.hv_interLayerIns,
-        radThick: s.hv_radThick,  lmt: s.lmt_hv,  wl: s.wireLen_hv,  R75: s.R75_hv,
+        radThick: s.hv_radThick,  lmt: s.lmt_hv,  wl: s.wireLen_hv,  R75: s.R75_hv,  Rroom: s.Rroom_hv,
         bareWt: s.bareWt_hv,  insWt: s.insWt_hv,  procWt: s.procWt_hv,
         strayPct: s.strayPct_hv,  loadLoss: s.ll_hv,  gradient: s.gradient_hv
     }));
@@ -277,6 +251,11 @@ function populateWindingCompare(inp, result) {
     wc("lv2","R75",  r4(s.R75_lv2) + " Ω");
     wc("hv", "R75",  r4(s.R75_hv)  + " Ω");
 
+    // Row: Resistance @ 35°C (room temperature)
+    wc("lv1","Rroom",  r4(s.Rroom_lv1) + " Ω");
+    wc("lv2","Rroom",  r4(s.Rroom_lv2) + " Ω");
+    wc("hv", "Rroom",  r4(s.Rroom_hv)  + " Ω");
+
     // Row: Weights
     wc("lv1","wt",  r1(s.bareWt_lv1) + " / " + r1(s.insWt_lv1) + " / " + r1(s.procWt_lv1) + " kg");
     wc("lv2","wt",  r1(s.bareWt_lv2) + " / " + r1(s.insWt_lv2) + " / " + r1(s.procWt_lv2) + " kg");
@@ -362,6 +341,7 @@ function populateOutput(inp, data) {
             buildOutputRow("LMT (m)",                r3(s.lmt_lv1),         r3(s.lmt_lv2),         r3(s.lmt_hv)) +
             buildOutputRow("Wire Length (m)",        r1(s.wireLen_lv1),     r1(s.wireLen_lv2),     r1(s.wireLen_hv)) +
             buildOutputRow("R @ 75°C (Ω)",           r4(s.R75_lv1),         r4(s.R75_lv2),         r4(s.R75_hv)) +
+            buildOutputRow("R @ 35°C (Ω)",           r4(s.Rroom_lv1),       r4(s.Rroom_lv2),       r4(s.Rroom_hv)) +
             buildOutputRow("Bare Weight (kg)",       r1(s.bareWt_lv1),      r1(s.bareWt_lv2),      r1(s.bareWt_hv)) +
             buildOutputRow("Load Loss (W)",          r0(s.ll_lv1),          r0(s.ll_lv2),          r0(s.ll_hv));
     }
@@ -737,27 +717,6 @@ function generateTechnicalReportPDF() {
         ["Enclosure (L × W × H)",              s.enc_L + " × " + s.enc_W + " × " + s.enc_H + " mm"],
     ]);
 
-    // Cross conductor area sub-section
-    subHeading("Cross Conductor Area Calculations");
-    tableHeader4("PARAMETER", "VALUE", "PARAMETER", "VALUE");
-    param4Table([
-        ["Window Height",           r0(s.windowHeight) + " mm",
-         "LV1 Conductor b (bare)",  r2(s.lv1_b) + " mm"],
-        ["End Clearance",           endClr + " mm",
-         "LV1 Conductor b (ins.)",  r2(s.lv1_bi) + " mm"],
-        ["Net Winding Length",      netWL + " mm",
-         "LV1 Conductor h (bare)",  r2(s.lv1_h) + " mm"],
-        // "Winding Length (eff.)" removed — same value as Net Winding Length (duplicate)
-        ["Total Parallel (LV1)",    String((inp.lv1axPar || 1) * (inp.lv1radPar || 1)),
-         "LV1 Conductor h (ins.)",  r2(s.lv1_hi) + " mm"],
-        ["Total Parallel (LV2)",    String((inp.lv2axPar || 1) * (inp.lv2radPar || 1)),
-         "LV1 Conductor Area",      r2(s.lv1_csActual) + " mm²"],
-        ["Total Parallel (HV)",     String((inp.hvaxPar  || 1) * (inp.hvradPar  || 1)),
-         "LV2 Conductor Area",      r2(s.lv2_csActual) + " mm²"],
-        ["",                        "",
-         "HV  Conductor Area",      r2(s.hv_csActual)  + " mm²"],
-    ]);
-
     // Core material sub-section
     subHeading("Core Material Summary");
     if (cm) {
@@ -782,7 +741,7 @@ function generateTechnicalReportPDF() {
           np: s.lv1Np, nr: s.lv1Nr,
           curPhase: s.lv1CurPhase, b: s.lv1_b, bi: s.lv1_bi, h: s.lv1_h, hi: s.lv1_hi,
           cs: s.lv1_csActual, cd: s.lv1_cd, interLayerIns: s.lv1_interLayerIns,
-          radThick: s.lv1_radThick, lmt: s.lmt_lv1, wl: s.wireLen_lv1, R75: s.R75_lv1,
+          radThick: s.lv1_radThick, lmt: s.lmt_lv1, wl: s.wireLen_lv1, R75: s.R75_lv1, Rroom: s.Rroom_lv1,
           bareWt: s.bareWt_lv1, insWt: s.insWt_lv1, procWt: s.procWt_lv1,
           strayPct: s.strayPct_lv1, loadLoss: s.ll_lv1, gradient: s.gradient_lv1,
           voltage: inp.lv1Voltage, conn: inp.lv1conn, mat: inp.lv1mat, kva: inp.lv1kva },
@@ -790,7 +749,7 @@ function generateTechnicalReportPDF() {
           np: s.lv2Np, nr: s.lv2Nr,
           curPhase: s.lv2CurPhase, b: s.lv2_b, bi: s.lv2_bi, h: s.lv2_h, hi: s.lv2_hi,
           cs: s.lv2_csActual, cd: s.lv2_cd, interLayerIns: s.lv2_interLayerIns,
-          radThick: s.lv2_radThick, lmt: s.lmt_lv2, wl: s.wireLen_lv2, R75: s.R75_lv2,
+          radThick: s.lv2_radThick, lmt: s.lmt_lv2, wl: s.wireLen_lv2, R75: s.R75_lv2, Rroom: s.Rroom_lv2,
           bareWt: s.bareWt_lv2, insWt: s.insWt_lv2, procWt: s.procWt_lv2,
           strayPct: s.strayPct_lv2, loadLoss: s.ll_lv2, gradient: s.gradient_lv2,
           voltage: inp.lv2Voltage, conn: inp.lv2conn, mat: inp.lv2mat, kva: inp.lv2kva },
@@ -798,7 +757,7 @@ function generateTechnicalReportPDF() {
           np: s.hvNp,  nr: s.hvNr,
           curPhase: s.hvCurPhase, b: s.hv_b, bi: s.hv_bi, h: s.hv_h, hi: s.hv_hi,
           cs: s.hv_csActual, cd: s.hv_cd, interLayerIns: s.hv_interLayerIns,
-          radThick: s.hv_radThick, lmt: s.lmt_hv, wl: s.wireLen_hv, R75: s.R75_hv,
+          radThick: s.hv_radThick, lmt: s.lmt_hv, wl: s.wireLen_hv, R75: s.R75_hv, Rroom: s.Rroom_hv,
           bareWt: s.bareWt_hv, insWt: s.insWt_hv, procWt: s.procWt_hv,
           strayPct: s.strayPct_hv, loadLoss: s.ll_hv, gradient: s.gradient_hv,
           voltage: inp.hvVoltage, conn: inp.hvconn, mat: inp.hvmat, kva: inp.hvkva },
@@ -845,6 +804,7 @@ function generateTechnicalReportPDF() {
             ["Mean Turn Length (LMT)",                r3(wnd.lmt) + " m"],
             ["Total Wire Length",                     r1(wnd.wl)  + " m"],
             ["Resistance per Phase @ 75°C",           r4(wnd.R75) + " \u03a9"],
+            ["Resistance per Phase @ 35°C (room)",    r4(wnd.Rroom) + " \u03a9"],
             ["Bare Weight",                           r1(wnd.bareWt)  + " kg"],
             ["Insulated Weight",                      r1(wnd.insWt)   + " kg"],
             ["Procurement Weight",                    r1(wnd.procWt)  + " kg"],
