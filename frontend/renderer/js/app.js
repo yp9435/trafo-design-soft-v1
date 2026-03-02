@@ -29,7 +29,7 @@ function onCalculationComplete(inputData, result) {
     _lastInputData  = inputData;
     _lastResultData = result;
 
-    populateOutput(result);
+    populateOutput(inputData, result);
     populateTechnicalReport(inputData, result);
     populateWindingCompare(inputData, result);   // 3-column side-by-side winding table
     populateBom(result);

@@ -6,7 +6,8 @@
 // ── Global layout state — defaults before first calculation ─────────────
 let ldDims = {
     coreDia             : 90,    // tongue width (D) mm
-    lv1Radial           : 36,    // LV1 radial build mm
+    // Radial build (winding thickness only — from winding_design.py radial_thickness)
+    lv1Radial           : 36,    // LV1 radial build mm — used for DRAWING
     duct1               : 10,    // air duct between LV1 and LV2 mm
     lv2Radial           : 21,    // LV2 radial build mm
     duct2               : 15,    // air duct between LV2 and HV mm
@@ -38,11 +39,25 @@ function updateLayoutDimensions(data) {
     ldDims.yokeHeight   = lyFront.yoke_depth_mm                  || s.yokeHeight    || ldDims.yokeHeight;
     ldDims.windowHeight = lyFront.L_window_height_mm             || s.windowHeight  || ldDims.windowHeight;
     ldDims.limbSpacing  = lyFront.A_limb_center_to_center_mm     || s.limbSpacingA  || ldDims.limbSpacing;
-    ldDims.lv1Radial    = lySide.lv1_radial_depth_mm || rd.lv1 || ldDims.lv1Radial;
-    ldDims.lv2Radial    = lySide.lv2_radial_depth_mm || rd.lv2 || ldDims.lv2Radial;
-    ldDims.hvRadial     = lySide.hv_radial_depth_mm  || rd.hv  || ldDims.hvRadial;
-    ldDims.duct1        = rd.duct1 || ldDims.duct1;
-    ldDims.duct2        = rd.duct2 || ldDims.duct2;
+    // Outer diameters from layout_design.py side_view (winding_outer_dimensions[0])
+    // These are the authoritative values — used for BOTH drawing and sidebar labels.
+    // Half-radius from limb centre = OD / 2 (rectangular winding, half-width used as radius)
+    let lv1OD = lySide.lv1_radial_depth_mm || 0;
+    let lv2OD = lySide.lv2_radial_depth_mm || 0;
+    let hvOD  = lySide.hv_radial_depth_mm  || 0;
+    ldDims.lv1OD     = lv1OD;
+    ldDims.lv2OD     = lv2OD;
+    ldDims.hvOD      = hvOD;
+    // Half-radii for concentric-ring drawing (OD/2 = half outer width from limb centre)
+    ldDims.lv1Half   = lv1OD / 2;
+    ldDims.lv2Half   = lv2OD / 2;
+    ldDims.hvHalf    = hvOD  / 2;
+    // Radial builds for side elevation band widths (from winding_design.py)
+    ldDims.lv1Radial = rd.lv1  || ((lv1OD - ldDims.coreDia) / 2) || ldDims.lv1Radial;
+    ldDims.lv2Radial = rd.lv2  || ((lv2OD - lv1OD) / 2)          || ldDims.lv2Radial;
+    ldDims.hvRadial  = rd.hv   || ((hvOD  - lv2OD) / 2)          || ldDims.hvRadial;
+    ldDims.duct1     = rd.duct1 || ldDims.duct1;
+    ldDims.duct2     = rd.duct2 || ldDims.duct2;
     ldDims.lv1Height    = s.windingLength_lv1 || s.windingLength || ldDims.windowHeight;
     ldDims.lv2Height    = s.windingLength_lv2 || s.windingLength || ldDims.windowHeight;
     ldDims.hvHeight     = s.windingLength_hv  || s.windingLength || ldDims.windowHeight;
@@ -60,11 +75,12 @@ function updateLayoutUI(d) {
     d = d || ldDims;
     function safe(id, val) { let el = document.getElementById(id); if (el) el.textContent = val; }
     safe("ldCoreDia",  d.coreDia    + " mm");
-    safe("ldLV1rad",   d.lv1Radial  + " mm");
+    // Show outer diameter (full winding OD) in sidebar — that is what layout_design.py returns
+    safe("ldLV1rad",   (d.lv1OD || d.lv1Radial)  + " mm");
     safe("ldDuct1",    d.duct1      + " mm");
-    safe("ldLV2rad",   d.lv2Radial  + " mm");
+    safe("ldLV2rad",   (d.lv2OD || d.lv2Radial)  + " mm");
     safe("ldDuct2",    d.duct2      + " mm");
-    safe("ldHVrad",    d.hvRadial   + " mm");
+    safe("ldHVrad",    (d.hvOD  || d.hvRadial)    + " mm");
     safe("ldLV1ax",    d.lv1Height  + " mm");
     safe("ldLV2ax",    d.lv2Height  + " mm");
     safe("ldHVax",     d.hvHeight   + " mm");
@@ -187,10 +203,11 @@ function drawFrontElevation(d) {
     let TH_mm = 2 * D_mm + L_mm;
     let TW_mm = 2 * A_mm + Tg_mm;
 
-    // Half-radii of each winding from limb centre
-    let lv1Half = Tg_mm / 2 + d.lv1Radial;
-    let lv2Half = lv1Half + d.duct1 + d.lv2Radial;
-    let hvHalf  = lv2Half + d.duct2 + d.hvRadial;
+    // Half outer widths from limb centre — directly from layout_design.py ODs
+    // Using OD/2 ensures diagram annotations match sidebar values exactly.
+    let lv1Half = d.lv1Half || (Tg_mm/2 + d.lv1Radial);
+    let lv2Half = d.lv2Half || (lv1Half + d.duct1 + d.lv2Radial);
+    let hvHalf  = d.hvHalf  || (lv2Half + d.duct2 + d.hvRadial);
 
     let ml = 68, mr = 72, mt = 42, mb = 54;
     let drawW = W - ml - mr, drawH = H - mt - mb;
@@ -217,34 +234,38 @@ function drawFrontElevation(d) {
     steelRect(ox, winBot, rTW, rD);
     limbs.forEach(function(lx) { steelRect(lx - rTg/2, winTop, rTg, rL); });
 
-    let wData = [
-        { radMM: d.lv1Radial, ductMM: 0,     fill:"rgba(230,155,40,0.30)",  str:"#e8a030", name:"LV1" },
-        { radMM: d.lv2Radial, ductMM: d.duct1,fill:"rgba(170,80,200,0.26)", str:"#c058d0", name:"LV2" },
-        { radMM: d.hvRadial,  ductMM: d.duct2,fill:"rgba(40,140,230,0.28)", str:"#2890e0", name:"HV"  }
+    // Winding bands: draw from outermost (HV) inward so inner windings paint over outer.
+    // Each half-width is the OUTER edge of that winding from limb centre.
+    // Inner edge of each winding = next-inner winding's outer edge.
+    let wBands = [
+        { halfMM: hvHalf,  innerMM: lv2Half, fill:"rgba(40,140,230,0.28)", str:"#2890e0", name:"HV"  },
+        { halfMM: lv2Half, innerMM: lv1Half, fill:"rgba(170,80,200,0.26)", str:"#c058d0", name:"LV2" },
+        { halfMM: lv1Half, innerMM: Tg_mm/2, fill:"rgba(230,155,40,0.30)", str:"#e8a030", name:"LV1" }
     ];
 
     limbs.forEach(function(lx) {
-        let innerPx = rTg / 2;
-        wData.forEach(function(wd, wi) {
-            if (wi > 0) innerPx += (wData[wi-1].radMM + wd.ductMM) * sc;
-            let outerPx = innerPx + wd.radMM * sc;
+        wBands.forEach(function(wb) {
+            let outerPx = wb.halfMM  * sc;
+            let innerPx = wb.innerMM * sc;
             let wL = lx - outerPx, wW = outerPx * 2;
             let hL = lx - innerPx, hW = innerPx * 2;
-            ctx.fillStyle = wd.fill; ctx.strokeStyle = wd.str; ctx.lineWidth = 1.2;
+            ctx.fillStyle = wb.fill; ctx.strokeStyle = wb.str; ctx.lineWidth = 1.2;
             ctx.fillRect(wL, winTop, wW, rL);
             ctx.strokeRect(wL, winTop, wW, rL);
-            // Clear bore and re-fill with steel
+            // Cut out bore (inner region) and refill with steel
             ctx.fillStyle = STEEL; ctx.fillRect(hL+0.5, winTop+0.5, hW-1, rL-1);
             hatch(ctx, hL, winTop, hW, rL, 8);
             ctx.strokeStyle = STEELSTR; ctx.lineWidth = 0.7;
             ctx.strokeRect(hL, winTop, hW, rL);
-            ctx.strokeStyle = wd.str; ctx.lineWidth = 1.2;
+            ctx.strokeStyle = wb.str; ctx.lineWidth = 1.2;
             ctx.strokeRect(wL, winTop, wW, rL);
-            if (lx === limbs[2]) {
-                canvasTxt(ctx, wd.name, wL + wW + 5, winTop + rL*0.5, wd.str, 9, "left","middle");
-            }
-            innerPx = outerPx;
         });
+    });
+    // Labels on rightmost limb only
+    wBands.forEach(function(wb) {
+        let outerPx = wb.halfMM * sc;
+        let wL = limbs[2] - outerPx;
+        canvasTxt(ctx, wb.name, limbs[2] + outerPx + 5, winTop + rL*0.5, wb.str, 9, "left", "middle");
     });
 
     // Dimensions
@@ -253,9 +274,9 @@ function drawFrontElevation(d) {
     dimLine(ctx, limbs[0], winBot+rD, limbs[1], winBot+rD, "A="+A_mm+"mm", 28, "#c09030", 9);
     dimLine(ctx, ox, oy, ox+rTW, oy, TW_mm+"mm", -18, "#6699aa", 8);
 
-    // HV outer width dim on limb[0]
+    // HV outer width dim — use actual backend OD value
     let hvL0 = limbs[0] - hvHalf * sc, hvR0 = limbs[0] + hvHalf * sc;
-    dimLine(ctx, hvL0, oy-10, hvR0, oy-10, "HV OD="+(Math.round(hvHalf*2))+"mm", -10, "#4488cc", 8);
+    dimLine(ctx, hvL0, oy-10, hvR0, oy-10, "HV OD="+(d.hvOD || Math.round(hvHalf*2))+"mm", -10, "#4488cc", 8);
 
     // Tongue label
     canvasTxt(ctx, "D="+d.coreDia, limbs[1], oy+rD/2, "#a0b4d0", 8);
@@ -368,10 +389,11 @@ function drawPlanView(d) {
 
     let encL = d.encLength, encWd = d.encWidth;
 
+    // Use OD/2 as ring radii — guaranteed to match sidebar labels
     let rCore = d.coreDia / 2;
-    let rLV1  = rCore + d.lv1Radial;
-    let rLV2  = rLV1  + d.duct1 + d.lv2Radial;
-    let rHV   = rLV2  + d.duct2 + d.hvRadial;
+    let rLV1  = d.lv1Half || (rCore + d.lv1Radial);
+    let rLV2  = d.lv2Half || (rLV1  + d.duct1 + d.lv2Radial);
+    let rHV   = d.hvHalf  || (rLV2  + d.duct2 + d.hvRadial);
 
     let ml=30, mr=30, mt=32, mb=42;
     let drawW=W-ml-mr, drawH=H-mt-mb;
@@ -410,7 +432,7 @@ function drawPlanView(d) {
     dimLine(ctx,ox+rEncL+16,oy,ox+rEncL+16,oy+rEncW,encWd+"mm",-4,"#6699aa",9);
 
     let lastX=limbXs[d.numLimbs-1];
-    let hvRpx=rHV*sc, hvOD=Math.round(rHV*2);
+    let hvRpx=rHV*sc, hvOD = d.hvOD || Math.round(rHV*2);
     ctx.save(); ctx.strokeStyle="rgba(80,130,200,0.5)"; ctx.lineWidth=0.8; ctx.setLineDash([3,3]);
     ctx.beginPath(); ctx.moveTo(lastX+hvRpx*0.7,centY-hvRpx*0.7); ctx.lineTo(lastX+hvRpx+4,centY-hvRpx-10); ctx.stroke();
     ctx.restore();
