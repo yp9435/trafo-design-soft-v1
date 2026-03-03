@@ -10,6 +10,7 @@ inputs = TransformerDesignInput(
     frequency=50,
     flux_density=1.4,
     k_value=0.62,
+    window_height=200,
     lv1={
         "voltage": 190,
         "kva_rating": 5,
@@ -17,7 +18,8 @@ inputs = TransformerDesignInput(
         "conductor_material": "CU",
         "connection_type": "Y",
         "axial_parallel": 1,    
-        "radial_parallel": 1 
+        "radial_parallel": 1,
+        "number_of_layers": 1
     },
     lv2={
         "voltage": 415,
@@ -26,7 +28,8 @@ inputs = TransformerDesignInput(
         "conductor_material": "CU",
         "connection_type": "Y",
         "axial_parallel": 1,    
-        "radial_parallel": 5 
+        "radial_parallel": 5,
+        "number_of_layers": 2
     },
     hv={
         "voltage": 750,
@@ -35,7 +38,8 @@ inputs = TransformerDesignInput(
         "conductor_material": "CU",
         "connection_type": "Y",
         "axial_parallel": 1,    
-        "radial_parallel": 1 
+        "radial_parallel": 1,
+        "number_of_layers": 5
     },
     core_material={
         "material": "CRGO",

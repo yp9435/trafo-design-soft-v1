@@ -64,9 +64,9 @@ class Formulas:
         line_current = (kva_rating * 1000) / (math.sqrt(3) * line_voltage)
 
         if connection_type.upper() == 'Y':
-            return line_current
+            return round(line_current,2)
         elif connection_type.upper() == 'D':
-            return line_current / math.sqrt(3)
+            return round(line_current / math.sqrt(3),2)
         else:
             raise ValueError("Connection type must be 'Y' or 'D'")
 
@@ -144,6 +144,19 @@ class Formulas:
         """
         layers = math.ceil(turns_per_phase / estimated_turns_per_layer)
         return max(layers, 1)
+    
+    def number_of_ducts(self, number_of_layers: int) -> int:
+        """
+        Calculate the number of radial cooling ducts between winding layers.
+
+        Cooling ducts are placed between adjacent layers:
+
+            Number of ducts = max(number_of_layers - 1, 0)
+
+        @param number_of_layers: Total radial winding layers
+        @return: Number of interlayer cooling ducts
+        """
+        return max(number_of_layers - 1, 0)
 
     def turns_per_layer(self, turns_per_phase: int, number_of_layers: int) -> int:
         """
@@ -202,7 +215,18 @@ class Formulas:
         """
         return round(window_height * 0.09)
     
-    def end_clr(self, voltage_per_phase: float) -> float:
+    def end_clearance_voltage_based(self, voltage_per_phase: float) -> float:
+        """
+        Determine end clearance based on phase voltage level.
+
+        Clearance is selected using standard insulation design practice:
+        - < 200 V     → 8 mm
+        - 200–1100 V  → 12 mm
+        - > 1100 V    → 16 mm
+
+        @param voltage_per_phase: Phase voltage (V)
+        @return: End clearance (mm)
+        """
         if voltage_per_phase < 200:
             return 8
         elif voltage_per_phase < 1100:
@@ -354,7 +378,7 @@ class Formulas:
 
     # Radial Thickness
 
-    def radial_thickness(self,insulated_height: float,radial_parallel: int,number_of_layers: int,interlayer_insulation: float) -> float:
+    def radial_thickness(self,insulated_height: float,radial_parallel: int,number_of_layers: int,interlayer_insulation: float, number_of_ducts: float, duct_thickness: float = 3.0) -> float:
         """
         Calculate radial build of winding.
         Result rounded to nearest whole mm (design tolerance).
@@ -365,7 +389,7 @@ class Formulas:
         @param interlayer_insulation: Interlayer insulation (mm)
         @return: Radial thickness (mm)
         """
-        thickness = (insulated_height * radial_parallel * number_of_layers + interlayer_insulation * (number_of_layers - 1) + 0.4)
+        thickness = (insulated_height * radial_parallel * number_of_layers + interlayer_insulation * max(number_of_layers - 1, 0) + number_of_ducts * duct_thickness + 0.4)
         return math.ceil(thickness)
 
     # Winding Dimensions

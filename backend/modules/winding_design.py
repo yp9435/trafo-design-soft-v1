@@ -10,13 +10,15 @@ class WindingDesign:
         clearance_to_core : radial clearance from core to winding inner surface (mm)
     """
 
-    def __init__(self, winding_inputs, core_results, clearance_to_core):
+    def __init__(self, winding_inputs, all_inputs, core_results, clearance_to_core):
+        self.all_inputs = all_inputs
         self.winding_inputs = winding_inputs
         self.core_results   = core_results
         self.clearance_to_core = clearance_to_core
         self.f = formulas.Formulas()
 
     def design(self):
+        ai = self.all_inputs
         f  = self.f
         wi = self.winding_inputs
         cr = self.core_results
@@ -40,13 +42,15 @@ class WindingDesign:
         )
 
         #  Layer / turn geometry                                               
-        number_of_layers = f.number_of_layers(turns_per_phase)
+        # number_of_layers = f.number_of_layers(turns_per_phase)
+        number_of_layers = wi.number_of_layers
+        number_of_ducts = f.number_of_ducts(number_of_layers)
 
         turns_per_layer  = f.turns_per_layer(turns_per_phase, number_of_layers)
 
         #  Window & winding length                                             
-        window_height   = f.window_height(core_dimensions[0])
-        end_clearance   = f.end_clearance(window_height)
+        window_height = ai.window_height if ai.window_height is not None else f.window_height(core_dimensions[0])        
+        end_clearance   = f.end_clearance_voltage_based(voltage_per_phase)
         winding_length  = f.winding_length(window_height, end_clearance)
 
         axial_parallel  = wi.axial_parallel   # int, default 1
@@ -96,7 +100,7 @@ class WindingDesign:
             conductor_height
         )
 
-        current_density_verification = f.current_density_verification(
+        current_density_final = f.current_density_verification(
             current_per_phase / total_parallel,
             total_conductor_cross_sectional_area
         )
@@ -112,7 +116,8 @@ class WindingDesign:
             insulated_conductor_height,
             radial_parallel,
             number_of_layers,
-            interlayer_insulation_thickness
+            interlayer_insulation_thickness,
+            number_of_ducts
         )
 
         #  Winding dimensions                                                  
@@ -196,7 +201,7 @@ class WindingDesign:
 
         load_loss = f.load_loss(
             bare_weight,
-            current_density_verification,
+            current_density_final,
             load_loss_factor,
             stray_loss_percentage
         )
@@ -217,6 +222,7 @@ class WindingDesign:
             "voltage_per_phase":                    voltage_per_phase,
             "current_per_phase":                    current_per_phase,
             "number_of_layers":                     number_of_layers,
+            "number_of_ducts":                      number_of_ducts,
             "turns_per_layer":                      turns_per_layer,
             "conductor_area":                       conductor_area,
             "window_height":                        window_height,
@@ -230,7 +236,7 @@ class WindingDesign:
             "conductor_height":                     conductor_height,
             "insulated_conductor_height":           insulated_conductor_height,
             "total_conductor_cross_sectional_area": total_conductor_cross_sectional_area,
-            "current_density_verification":         current_density_verification,
+            "current_density_verification":         current_density_final,
             "interlayer_insulation_thickness":      interlayer_insulation_thickness,
             "radial_thickness":                     radial_thickness,
             "winding_inner_dimensions":             winding_inner_dimensions,

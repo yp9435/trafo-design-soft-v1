@@ -18,6 +18,7 @@ class TransformerDesignEngine:
 
         # Step 2: LV1
         lv1_design = WindingDesign(
+            all_inputs=self.inputs,
             winding_inputs=self.inputs.lv1,
             core_results=core_results,
             clearance_to_core=5          # mm, tight to core for low-voltage winding
@@ -29,6 +30,7 @@ class TransformerDesignEngine:
         # Step 3: LV2
         lv2_clearance = lv1_results["radial_thickness"] + 10   # LV1 build + inter-winding gap
         lv2_design = WindingDesign(
+            all_inputs=self.inputs,
             winding_inputs=self.inputs.lv2,
             core_results=core_results,
             clearance_to_core=lv2_clearance
@@ -39,6 +41,7 @@ class TransformerDesignEngine:
         # Step 4: HV
         hv_clearance = lv2_clearance + lv2_results["radial_thickness"] + 15
         hv_design = WindingDesign(
+            all_inputs=self.inputs,
             winding_inputs=self.inputs.hv,
             core_results=core_results,
             clearance_to_core=hv_clearance

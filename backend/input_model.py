@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, model_validator
-from typing import Literal
+from typing import Literal, Optional
 
 # Individual Winding Input Model
 
@@ -39,6 +39,11 @@ class WindingInput(BaseModel):
     radial_parallel: int = Field(
         ..., ge=1, le=20,
         description="Number of Radial Parallel Conductors"
+    )
+    number_of_layers: int = Field(
+        2,
+        ge=1, le=20,
+        description="Number of Layers in a Winding (default = 2)"
     )
 
     # Material-based validation
@@ -97,6 +102,11 @@ class TransformerDesignInput(BaseModel):
         ..., 
         ge=0.4, le=0.8,
         description="Design constant K (0.4 – 0.8)"
+    )
+    window_height: Optional[int] = Field(
+        None,
+        ge=1, le=10000,
+        description="Window Height (optional, auto-calculated if not provided)"
     )
 
     lv1: WindingInput = Field(..., description="LV1 winding details")
