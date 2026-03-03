@@ -26,10 +26,7 @@ function collectInputs() {
 
     // k_value: kept in sync with ratedPower for API
     let ratedPower  = num("ratedPower");
-    let kValue      = ratedPower <= 25 ? 0.45 : ratedPower <= 100 ? 0.55 : 0.62;
-    // Allow manual override if input exists
-    let kEl = document.getElementById("kValue");
-    if (kEl && parseFloat(kEl.value)) kValue = parseFloat(kEl.value);
+    let kValue = num("kValue");
 
     // coreMaterialType from HTML select: "CRGO" | "CRNO" (backend Literal)
     let coreMaterialRaw = sel("coreMaterialType") || "CRGO";
@@ -45,6 +42,7 @@ function collectInputs() {
         vectorGroup     : sel("vectorGroup"),
         insulationClass : sel("insulationClass"),
         phases          : parseInt(sel("phases")) || 3,
+        windowHeight    : num("windowHeight") || null,
 
         // ── Voltages & kVA ────────────────────────────────────────────
         lv1Voltage  : num("lv1Voltage"),
@@ -73,11 +71,6 @@ function collectInputs() {
 
         // ── Number of layers (user-specified, sent to backend) ───────────
         lv1Layers : int_("lv1Layers"), lv2Layers : int_("lv2Layers"), hvLayers : int_("hvLayers"),
-
-        // ── Window height per winding (optional override) ────────────────
-        lv1WindowHeight : num("lv1WindowHeight") || 0,
-        lv2WindowHeight : num("lv2WindowHeight") || 0,
-        hvWindowHeight  : num("hvWindowHeight")  || 0,
 
         // ── Core material ───────────────────────────────────────────────
         coreMaterialType : coreMaterialRaw,
