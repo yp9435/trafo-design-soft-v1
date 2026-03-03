@@ -31,19 +31,82 @@ function populateTechnicalReport(inp, result) {
         trRow("Core Frame (Tongue × Stack)", s.tongue + " × " + s.stack + " mm");
     setTbody("coreDesignBody", coreHtml);
 
-    // ── final_core object fields ──────────────────────────────────────────────
-    // tongue_width, center_distance, window_height, core_length,
-    // core_weight, core_loss, tank/overall dims
-    let finalCoreHtml =
-        trRow("Tongue Width",          s.tongue          + " mm") +
-        trRow("Yoke Height",           r0(s.yokeHeight)  + " mm") +
-        trRow("Window Height",         r0(s.windowHeight) + " mm") +
-        trRow("Limb Spacing (c-c)",    s.limbSpacingA    + " mm") +
-        trRow("Core Length",           r0(s.coreLen_mm)  + " mm") +
-        trRow("Core Weight",           r1(s.coreWeight)  + " kg") +
-        trRow("Core Loss",             r0(s.coreLoss)    + " W") +
-        trRow("Enclosure (L × W × H)", s.enc_L + " × " + s.enc_W + " × " + s.enc_H + " mm");
-    setTbody("finalCoreBody", finalCoreHtml);
+    // ── FINAL CORE DESIGN — self-contained section injected after Core Design table ──
+    // Reads all values from final_core_design.py via steps + coreMatMeta.
+    // Does NOT rely on any pre-existing element in index.html.
+    (function() {
+        var anchor = document.getElementById('coreDesignBody');
+        if (!anchor) return;
+        var anchorTable = anchor.closest('table');
+        if (!anchorTable) return;
+        var container   = anchorTable.parentNode;
+        var insertAfter = anchorTable.nextSibling;
+
+        // Remove any previously injected section so re-run doesn't duplicate
+        var existing = container.querySelector('.final-core-section');
+        if (existing) existing.remove();
+
+        var section = document.createElement('div');
+        section.className = 'final-core-section';
+        section.style.marginTop = '18px';
+
+        // Section label — same style as 'SECTION 1: CORE DESIGN'
+        var hd = document.createElement('div');
+        hd.style.cssText = 'font-size:11px;font-weight:700;letter-spacing:1.5px;' +
+            'text-transform:uppercase;color:#7a8a9a;' +
+            'padding:10px 16px 8px;border-bottom:1px solid rgba(255,255,255,0.07);';
+        hd.textContent = 'Final Core Design';
+        section.appendChild(hd);
+
+        // Table
+        var tbl = document.createElement('table');
+        tbl.style.cssText = 'width:100%;border-collapse:collapse;';
+
+        // Header row
+        var thead = document.createElement('thead');
+        thead.innerHTML =
+            '<tr>' +
+            '<th style="text-align:left;padding:8px 16px;font-size:11px;font-weight:700;' +
+            'letter-spacing:1px;text-transform:uppercase;color:#fff;' +
+            'background:#1e2a38;border-bottom:1px solid rgba(255,255,255,0.1);">PARAMETER</th>' +
+            '<th style="text-align:right;padding:8px 16px;font-size:11px;font-weight:700;' +
+            'letter-spacing:1px;text-transform:uppercase;color:#fff;' +
+            'background:#1e2a38;border-bottom:1px solid rgba(255,255,255,0.1);">VALUE</th>' +
+            '</tr>';
+        tbl.appendChild(thead);
+
+        // Data rows — all fields from final_core_design.py return dict
+        var rows = [
+            ['Tongue Width',            s.tongue                                               + ' mm'],
+            ['Yoke Height',             r0(s.yokeHeight)                                       + ' mm'],
+            ['Window Height',           r0(s.windowHeight)                                     + ' mm'],
+            ['Limb Spacing (c-c)',      s.limbSpacingA                                         + ' mm'],
+            ['Core Length',             r0(s.coreLen_mm)                                       + ' mm'],
+            ['Density',                 cm ? cm.density                                        : '—'],
+            ['Build Factor',            cm ? String(cm.buildFactor)                            : '—'],
+            ['Specific Loss (W/kg)',    cm ? r3(cm.specLoss) + ' W/kg'                        : '—'],
+            ['Core Weight',             r1(s.coreWeight)                                       + ' kg'],
+            ['Core Loss',               r0(s.coreLoss)                                         + ' W'],
+            ['Enclosure (L × W × H)', s.enc_L + ' × ' + s.enc_W + ' × ' + s.enc_H + ' mm'],
+        ];
+
+        var tbody = document.createElement('tbody');
+        rows.forEach(function(row, i) {
+            var tr = document.createElement('tr');
+            tr.style.background = (i % 2 === 0) ? 'transparent' : 'rgba(255,255,255,0.03)';
+            tr.innerHTML =
+                '<td style="padding:7px 16px;font-size:13px;color:#c8cdd4;' +
+                'border-bottom:1px solid rgba(255,255,255,0.05);width:60%;">' +
+                row[0] + '</td>' +
+                '<td style="padding:7px 16px;font-size:13px;font-weight:600;color:#e8edf2;' +
+                'text-align:right;border-bottom:1px solid rgba(255,255,255,0.05);width:40%;">' +
+                row[1] + '</td>';
+            tbody.appendChild(tr);
+        });
+        tbl.appendChild(tbody);
+        section.appendChild(tbl);
+        container.insertBefore(section, insertAfter);
+    })();
 
     // Phase voltage labels (display only — no arithmetic, just label format)
     let lv1PhaseVLabel = (inp.lv1conn === "Y") ? inp.lv1Voltage + " / √3 V" : inp.lv1Voltage + " V";
@@ -688,7 +751,7 @@ function generateTechnicalReportPDF() {
     // Use backend-provided values — no recalculation in frontend
     let endClr = s.endClearance  || 0;
     let netWL  = s.windingLength  || 0;
-    let lv1pV  = s.lv1CurPhase ? (w1 ? w1.voltage_per_phase : 0) : 0;  // display only
+    // lv1 phase voltage is derived from input — w1 is not in scope here
     let revVT  = r4(s.vt);
 
     tableHeader2("PARAMETER", "VALUE");
@@ -870,7 +933,7 @@ const bomDownloadExcel = document.getElementById("bomDownloadExcel");
 const bomPrint         = document.getElementById("bomPrint");
 
 if (bomDownloadPdf) {
-    bomDownloadPdf.addEventListener("click", function() { printPage(); });
+    bomDownloadPdf.addEventListener("click", function() { generateBomPDF(); });
 }
 
 if (bomDownloadExcel) {
@@ -884,6 +947,205 @@ if (bomPrint) {
 }
 
 /* Populate full BOM table from backend bom object */
+
+/* =============================================
+   BOM — PROFESSIONAL jsPDF GENERATOR
+   ============================================= */
+function generateBomPDF() {
+    if (!_lastInputData || !_lastResultData) {
+        showToast("Please run a calculation first.", "warn");
+        return;
+    }
+    let inp = _lastInputData;
+    let bm  = (_lastResultData.bom) || {};
+    let wd  = bm.windings || {};
+    let cr  = bm.core     || {};
+
+    let jsPDF = window.jspdf ? window.jspdf.jsPDF : (window.jsPDF || null);
+    if (!jsPDF) { showToast("PDF library not loaded.", "error"); return; }
+
+    let doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+    let PW=210, PH=297, ML=14, MR=14, TW=210-14-14;
+    let y=0;
+
+    let DARK   = [22, 32, 48];
+    let ACCENT = [0, 122, 204];
+    let LIGHT  = [245, 248, 252];
+    let WHITE  = [255,255,255];
+    let BORDER = [200,208,220];
+    let TEXT   = [30,35,45];
+    let MID    = [100,108,125];
+    let GREEN  = [16,140,80];
+
+    function chkBrk(h) {
+        if (y+h > PH-18) { doc.addPage(); y=20; footer(doc.getNumberOfPages()); }
+    }
+    function footer(n) {
+        doc.setFont("helvetica","normal"); doc.setFontSize(8); doc.setTextColor(...MID);
+        doc.setDrawColor(...BORDER);
+        doc.line(ML, PH-12, PW-MR, PH-12);
+        doc.text("Bhavitron Transformers  |  Bill of Materials  |  "+new Date().toLocaleDateString(), ML, PH-7);
+        doc.text("Page "+n, PW-MR, PH-7, {align:"right"});
+    }
+
+    // ── HEADER BAND ─────────────────────────────────────────────────────
+    doc.setFillColor(...DARK); doc.rect(0,0,PW,48,"F");
+    doc.setFillColor(...ACCENT); doc.rect(0,48,PW,3,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(20); doc.setTextColor(...WHITE);
+    doc.text("BILL OF MATERIALS", PW/2, 20, {align:"center"});
+    doc.setFontSize(11); doc.setFont("helvetica","normal"); doc.setTextColor(180,210,240);
+    doc.text("Dry Type Transformer  —  Bhavitron Transformers Pvt. Ltd.", PW/2, 30, {align:"center"});
+    doc.setFontSize(10); doc.setTextColor(150,185,220);
+    doc.text("Transformer Rating: "+(inp.ratedPower||"—")+" kVA   |   Currency: INR   |   Prices: Feb 2026", PW/2, 40, {align:"center"});
+    footer(1);
+
+    // ── SUMMARY BOXES ────────────────────────────────────────────────────
+    y = 62;
+    let totalWt = (bm.active_part_weight_kg||0)+(bm.enclosure_weight_kg||0);
+    let boxes = [
+        {label:"ACTIVE WEIGHT", val: r1(bm.active_part_weight_kg||0)+" kg"},
+        {label:"ENCLOSURE",     val: r1(bm.enclosure_weight_kg||0)+" kg"},
+        {label:"TOTAL WEIGHT",  val: r1(totalWt)+" kg"},
+        {label:"TOTAL COST",    val: "\u20b9 "+r0(bm.total_cost_inr||0)},
+    ];
+    let bw=(TW-9)/4;
+    boxes.forEach(function(b,i) {
+        let bx=ML+i*(bw+3);
+        doc.setFillColor(...LIGHT); doc.setDrawColor(...BORDER);
+        doc.roundedRect(bx,y,bw,18,2,2,"FD");
+        doc.setFont("helvetica","normal"); doc.setFontSize(7); doc.setTextColor(...MID);
+        doc.text(b.label, bx+bw/2, y+6, {align:"center"});
+        doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(...TEXT);
+        doc.text(b.val, bx+bw/2, y+14, {align:"center"});
+    });
+
+    // ── SECTION: CORE MATERIAL ───────────────────────────────────────────
+    y = 92;
+    doc.setFillColor(...DARK); doc.rect(ML,y,TW,8,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...WHITE);
+    doc.text("CORE MATERIAL", ML+4, y+5.5);
+    y += 8;
+
+    // sub-header
+    let cCols = [TW*0.18, TW*0.22, TW*0.20, TW*0.22, TW*0.18];
+    let cHdrs = ["CATEGORY","MATERIAL","QUANTITY (KG)","GRADE","TOTAL COST (\u20b9)"];
+    let cxs   = [ML];
+    cCols.forEach(function(w,i){ cxs.push(cxs[i]+w); });
+    doc.setFillColor(55,65,85); doc.rect(ML,y,TW,7,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(...WHITE);
+    cHdrs.forEach(function(h,i){ doc.text(h, cxs[i]+2, y+4.8); });
+    y+=7;
+
+    doc.setFillColor(...LIGHT); doc.rect(ML,y,TW,9,"F");
+    doc.setDrawColor(...BORDER); doc.rect(ML,y,TW,9);
+    cxs.forEach(function(x){ doc.line(x,y,x,y+9); });
+    let cVals = ["Core", cr.material||"\u2014",
+        r2(cr.weight_kg||0)+" kg",
+        cr.price_source||"\u2014",
+        "\u20b9 "+r0(cr.cost_inr||0)];
+    doc.setFont("helvetica","normal"); doc.setFontSize(8.5); doc.setTextColor(...TEXT);
+    cVals.forEach(function(v,i){
+        let align = (i===4)?"right":"left";
+        let tx = (i===4) ? cxs[i]+cCols[i]-2 : cxs[i]+2;
+        doc.text(String(v), tx, y+6, {align:align});
+    });
+    y+=9;
+
+    // ── SECTION: WINDING MATERIALS ───────────────────────────────────────
+    y += 10;
+    doc.setFillColor(...DARK); doc.rect(ML,y,TW,8,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...WHITE);
+    doc.text("WINDING MATERIALS", ML+4, y+5.5);
+    y+=8;
+
+    let wCols = [TW*0.12, TW*0.18, TW*0.20, TW*0.30, TW*0.20];
+    let wHdrs = ["WINDING","MATERIAL","QUANTITY (KG)","GRADE","TOTAL COST (\u20b9)"];
+    let wxs   = [ML];
+    wCols.forEach(function(w,i){ wxs.push(wxs[i]+w); });
+    doc.setFillColor(55,65,85); doc.rect(ML,y,TW,7,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(...WHITE);
+    wHdrs.forEach(function(h,i){ doc.text(h, wxs[i]+2, y+4.8); });
+    y+=7;
+
+    [["LV1",wd.lv1],["LV2",wd.lv2],["HV",wd.hv]].forEach(function(pair,ri) {
+        let lbl=pair[0], w=pair[1]||{};
+        chkBrk(9);
+        if(ri%2===0){ doc.setFillColor(...LIGHT); doc.rect(ML,y,TW,9,"F"); }
+        doc.setDrawColor(...BORDER); doc.rect(ML,y,TW,9);
+        wxs.forEach(function(x){ doc.line(x,y,x,y+9); });
+        let color = lbl==="HV" ? ACCENT : GREEN;
+        doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...color);
+        doc.text(lbl, wxs[0]+2, y+6);
+        let wVals = [null, w.material||"\u2014",
+            r2(w.weight_kg||0)+" kg",
+            w.price_source||"\u2014",
+            "\u20b9 "+r0(w.cost_inr||0)];
+        doc.setFont("helvetica","normal"); doc.setTextColor(...TEXT);
+        wVals.forEach(function(v,i){
+            if(v===null) return;
+            let align = (i===4)?"right":"left";
+            let tx = (i===4) ? wxs[i]+wCols[i]-2 : wxs[i]+2;
+            doc.text(String(v), tx, y+6, {align:align});
+        });
+        y+=9;
+    });
+
+    // Total conductor subtotal
+    chkBrk(10);
+    doc.setFillColor(235,240,248); doc.rect(ML,y,TW,9,"F");
+    doc.setDrawColor(...BORDER); doc.rect(ML,y,TW,9);
+    doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(...TEXT);
+    doc.text("Total Conductor", wxs[0]+2, y+6);
+    doc.text(r2(wd.total_conductor_kg||0)+" kg", wxs[2]+2, y+6);
+    doc.text("\u20b9 "+r0(wd.total_conductor_cost||0), wxs[4]+wCols[4]-2, y+6, {align:"right"});
+    y+=9;
+
+    // ── WEIGHT & COST SUMMARY TABLE ──────────────────────────────────────
+    y+=12;
+    chkBrk(70);
+    doc.setFillColor(...DARK); doc.rect(ML,y,TW,8,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(9); doc.setTextColor(...WHITE);
+    doc.text("WEIGHT & COST SUMMARY", ML+4, y+5.5);
+    y+=8;
+
+    let sumRows = [
+        ["Core Weight",         r1(cr.weight_kg||0)+" kg",         "\u20b9 "+r0(cr.cost_inr||0)],
+        ["Total Conductor Wt.", r1(wd.total_conductor_kg||0)+" kg", "\u20b9 "+r0(wd.total_conductor_cost||0)],
+        ["Insulation",          r2(bm.insulation_kg||0)+" kg",      "\u2014"],
+        ["Active Part",         r1(bm.active_part_weight_kg||0)+" kg", "\u2014"],
+        ["Enclosure (est.)",    r1(bm.enclosure_weight_kg||0)+" kg", "\u2014"],
+        ["TOTAL",               r1(totalWt)+" kg",                  "\u20b9 "+r0(bm.total_cost_inr||0)],
+    ];
+    let sCols = [TW*0.45, TW*0.28, TW*0.27];
+    let sxs   = [ML, ML+sCols[0], ML+sCols[0]+sCols[1]];
+    doc.setFillColor(55,65,85); doc.rect(ML,y,TW,7,"F");
+    doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(...WHITE);
+    ["ITEM","WEIGHT","COST"].forEach(function(h,i){ doc.text(h, sxs[i]+2, y+4.8); });
+    y+=7;
+
+    sumRows.forEach(function(row,ri) {
+        chkBrk(9);
+        let isTotal = (ri===sumRows.length-1);
+        if(isTotal){ doc.setFillColor(0,100,170); doc.rect(ML,y,TW,9,"F"); }
+        else if(ri%2===0){ doc.setFillColor(...LIGHT); doc.rect(ML,y,TW,9,"F"); }
+        doc.setDrawColor(...BORDER); doc.rect(ML,y,TW,9);
+        sxs.forEach(function(x){ doc.line(x,y,x,y+9); });
+        let fc2 = isTotal ? WHITE : TEXT;
+        let fw  = isTotal ? "bold" : "normal";
+        doc.setFont("helvetica",fw); doc.setFontSize(8.5); doc.setTextColor(...fc2);
+        row.forEach(function(v,i){
+            let align = (i>0)?"right":"left";
+            let tx    = (i>0) ? sxs[i]+sCols[i]-2 : sxs[i]+2;
+            doc.text(String(v), tx, y+6, {align:align});
+        });
+        y+=9;
+    });
+
+    // save
+    let fname = "BOM_"+(inp.ratedPower||"0")+"kVA_"+new Date().toISOString().slice(0,10)+".pdf";
+    doc.save(fname);
+}
+
 function populateBom(result) {
     let bm = result.bom || {};
     let kva = _lastInputData ? _lastInputData.ratedPower : "";
@@ -991,6 +1253,108 @@ if (rpExportSvg) {
 const rpExportPdf = document.getElementById("rpExportPdf");
 if (rpExportPdf) {
     rpExportPdf.addEventListener("click", function() {
-        printPage([".rp-export-bar", ".main-header"]);
+        generateRatingPlatePDF();
     });
+}
+
+/* =============================================
+   RATING PLATE — PROFESSIONAL jsPDF GENERATOR
+   ============================================= */
+function generateRatingPlatePDF() {
+    if (!_lastInputData || !_lastResultData) {
+        showToast('Please run a calculation first.', 'warn');
+        return;
+    }
+    var inp = _lastInputData;
+    var rp  = (_lastResultData.ratingPlate) || {};
+    var bm  = (_lastResultData.bom)         || {};
+    var pr  = rp.primary     || {};
+    var s1  = rp.secondary_1 || {};
+    var s2  = rp.secondary_2 || {};
+
+    var jsPDF2 = window.jspdf ? window.jspdf.jsPDF : (window.jsPDF || null);
+    if (!jsPDF2) { showToast('PDF library not loaded.', 'error'); return; }
+
+    var doc = new jsPDF2({ orientation:'landscape', unit:'mm', format:'a5' });
+    var PW=210, PH=148, ML=10, y=0;
+    var TW=PW-ML-ML;
+
+    var DARK   = [18,28,45];
+    var ACCENT = [0,112,192];
+    var WHITE  = [255,255,255];
+    var LIGHT  = [245,248,252];
+    var BORDER = [190,200,215];
+    var TEXT   = [25,30,42];
+    var MID    = [100,108,125];
+
+    // Outer border
+    doc.setDrawColor(...ACCENT); doc.setLineWidth(1.2);
+    doc.rect(5,5,PW-10,PH-10);
+    doc.setLineWidth(0.3); doc.rect(6.5,6.5,PW-13,PH-13);
+
+    // Header band
+    doc.setFillColor(...DARK); doc.rect(5,5,PW-10,30,'F');
+    doc.setFillColor(...ACCENT); doc.rect(5,35,PW-10,2,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(...WHITE);
+    doc.text('BHAVITRON TRANSFORMERS PVT. LTD.', PW/2, 17, {align:'center'});
+    doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(160,195,235);
+    doc.text('Manufacturer of Dry Type & Oil Cooled Transformers  |  ISO 9001:2015', PW/2, 24, {align:'center'});
+    doc.setFontSize(7.5); doc.setTextColor(140,175,215);
+    doc.text('NAMEPLATE  /  RATING PLATE', PW/2, 31, {align:'center'});
+
+    // Big rating box
+    y = 43;
+    var ratingStr = rp.rating_kva || ((inp.ratedPower||'—')+' KVA');
+    doc.setFillColor(...ACCENT); doc.roundedRect(ML,y,TW,16,2,2,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor(...WHITE);
+    doc.text(ratingStr, PW/2, y+11, {align:'center'});
+    y+=20;
+
+    // Two-column data grid
+    var colW=(TW/2)-2, rh=8;
+    var col1x=ML, col2x=ML+TW/2+2;
+    var leftRows  = [
+        ['FREQUENCY',   rp.frequency_hz||((inp.frequency||50)+' HZ')],
+        ['PRIMARY',     pr.display||'—'],
+        ['SECONDARY 1', s1.display||'—'],
+        ['SECONDARY 2', s2.display||'—'],
+    ];
+    var rightRows = [
+        ['VECTOR GROUP', (rp.vector_symbol||'—').toUpperCase()],
+        ['IMPEDANCE',    rp.impedance_percentage||'<5%'],
+        ['WEIGHT',       rp.weight || (bm.active_part_weight_kg ? r0((bm.active_part_weight_kg||0)+(bm.enclosure_weight_kg||0))+' kg' : '—')],
+        ['MFG. YEAR',    String(rp.mfg_year||new Date().getFullYear())],
+    ];
+    function dataRow2(x, label, value, i, w2) {
+        var bg = (i%2===0) ? LIGHT : WHITE;
+        doc.setFillColor(...bg); doc.rect(x,y+i*rh,w2,rh,'F');
+        doc.setDrawColor(...BORDER); doc.rect(x,y+i*rh,w2,rh);
+        doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(...MID);
+        doc.text(label, x+2, y+i*rh+3.5);
+        doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(...TEXT);
+        doc.text(String(value), x+2, y+i*rh+7);
+    }
+    leftRows.forEach(function(r,i)  { dataRow2(col1x, r[0], r[1], i, colW); });
+    rightRows.forEach(function(r,i) { dataRow2(col2x, r[0], r[1], i, colW); });
+    y += leftRows.length*rh + 4;
+
+    // Standards bar
+    doc.setFillColor(235,240,248); doc.rect(ML,y,TW,8,'F');
+    doc.setDrawColor(...BORDER); doc.rect(ML,y,TW,8);
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(...MID);
+    doc.text('IS 1180-1:2014  |  IEC 60076  |  Dry Type  |  Class F Insulation  |  IP 23', PW/2, y+5, {align:'center'});
+    y+=8;
+
+    // SL row
+    doc.setFontSize(7); doc.setTextColor(...MID);
+    doc.text('SL. NO.: '+(rp.sl_no||'__________')+'      SERIAL: 2025-001      Date: '+new Date().toLocaleDateString('en-IN'), PW/2, y+7, {align:'center'});
+
+    // Bottom band
+    doc.setFillColor(...DARK); doc.rect(5,PH-18,PW-10,13,'F');
+    doc.setFillColor(...ACCENT); doc.rect(5,PH-18,PW-10,2,'F');
+    doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(150,180,220);
+    doc.text('Generated by Bhavitron Transformer Design Software  |  '+new Date().toLocaleDateString('en-IN'), PW/2, PH-9, {align:'center'});
+
+    var fname = 'RatingPlate_'+(inp.ratedPower||'0')+'kVA_'+new Date().toISOString().slice(0,10)+'.pdf';
+    doc.save(fname);
 }
