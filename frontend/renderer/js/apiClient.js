@@ -108,16 +108,16 @@ function mapApiResponse(apiResp) {
     let encW = lyTop.enclosure_width_mm  || fc.overall_width  || fc.tank_width  || 0;
     let encH = lyTop.enclosure_height_mm || fc.overall_height || fc.tank_height || 0;
 
-    // Turns — lv1 from core.turns_per_phase; lv2/hv derived from voltage ÷ revised vt
+    // Turns — read turns_per_phase directly from each winding's backend object.
+    // LV1: core_design.py sets turns_per_phase on the core object.
+    // LV2, HV: winding_design.py sets turns_per_phase on each winding object.
+    // Previously lv2/hv were computed as turns_per_layer * number_of_layers —
+    // that caused a double-mapping mismatch. Reading directly fixes it.
     let vt     = c.volts_per_turn || 1;
     let initVT = c.initial_volts_per_turn || vt;
-    let lv1Turns = c.turns_per_phase || 0;
-    let lv2Turns = w2.turns_per_layer && w2.number_of_layers
-                     ? w2.turns_per_layer * w2.number_of_layers
-                     : Math.round((w2.voltage_per_phase || 0) / vt);
-    let hvTurns  = wh.turns_per_layer && wh.number_of_layers
-                     ? wh.turns_per_layer * wh.number_of_layers
-                     : Math.round((wh.voltage_per_phase || 0) / vt);
+    let lv1Turns = c.turns_per_phase  || 0;
+    let lv2Turns = w2.turns_per_phase || 0;
+    let hvTurns  = wh.turns_per_phase || 0;
 
     // Losses
     let totalLoadLoss = (w1.load_loss || 0) + (w2.load_loss || 0) + (wh.load_loss || 0);
