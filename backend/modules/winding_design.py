@@ -223,6 +223,7 @@ class WindingDesign:
             "current_per_phase":                    current_per_phase,
             "number_of_layers":                     number_of_layers,
             "number_of_ducts":                      number_of_ducts,
+            "turns_per_phase":                      turns_per_phase,
             "turns_per_layer":                      turns_per_layer,
             "conductor_area":                       conductor_area,
             "window_height":                        window_height,
