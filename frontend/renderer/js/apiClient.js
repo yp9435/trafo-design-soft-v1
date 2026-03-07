@@ -22,7 +22,7 @@ function buildApiPayload(inp) {
     // DO NOT send: phases, vector_group, insulation_class,
     //              number_of_layers, window_height  — not in the model.
 
-    function windingPayload(voltage, kva, cd, mat, conn, axPar, radPar) {
+    function windingPayload(voltage, kva, cd, mat, conn, axPar, radPar, numLayers) {
         return {
             voltage                   : voltage,
             kva_rating                : kva,
@@ -30,7 +30,8 @@ function buildApiPayload(inp) {
             conductor_material        : mat,    // "CU" | "AL"  (short code)
             connection_type           : conn,   // "D"  | "Y"   (short code)
             axial_parallel            : axPar  || 1,
-            radial_parallel           : radPar || 1
+            radial_parallel           : radPar || 1,
+            number_of_layers          : numLayers || 2
         };
     }
 
@@ -43,17 +44,17 @@ function buildApiPayload(inp) {
         lv1 : windingPayload(
             inp.lv1Voltage, inp.lv1kva, inp.lv1cd,
             inp.lv1mat, inp.lv1conn,
-            inp.lv1axPar, inp.lv1radPar
+            inp.lv1axPar, inp.lv1radPar, inp.lv1Layers 
         ),
         lv2 : windingPayload(
             inp.lv2Voltage, inp.lv2kva, inp.lv2cd,
             inp.lv2mat, inp.lv2conn,
-            inp.lv2axPar, inp.lv2radPar
+            inp.lv2axPar, inp.lv2radPar, inp.lv2Layers 
         ),
         hv  : windingPayload(
             inp.hvVoltage, inp.hvkva, inp.hvcd,
             inp.hvmat, inp.hvconn,
-            inp.hvaxPar, inp.hvradPar
+            inp.hvaxPar, inp.hvradPar, inp.hvLayers
         ),
 
         core_material : {
